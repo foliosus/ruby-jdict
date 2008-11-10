@@ -17,11 +17,11 @@ SPEC =
     s.has_rdoc     = true
     s.rdoc_options += RDOC_OPTS
     s.extra_rdoc_files = ["README", "CHANGELOG", "COPYING"]
-    s.summary      = "a Ruby interface to Jim Breen's Japanese dictionaries"
+    s.summary      = "Rubygem interface to Jim Breen's Japanese dictionaries"
     s.description  = s.summary
     s.author       = "Jonathan Bryan"
     s.email        = 'jxb6065 @nospam@ rit.edu'
-    s.homepage     = 'http://dev.zendictionary.com/ruby-jdict/'
+    s.homepage     = 'http://www.github.com/jonathanb/ruby-jdict'
     s.files        = PKG_FILES
     s.add_dependency('hpricot')
   end

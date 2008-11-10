@@ -1,0 +1,33 @@
+<JMdict>
+<entry>
+<ent_seq>1171270</ent_seq>
+<k_ele>
+<keb>右翼</keb>
+<ke_pri>ichi1</ke_pri>
+<ke_pri>news1</ke_pri>
+<ke_pri>nf04</ke_pri>
+</k_ele>
+<r_ele>
+<reb>うよく</reb>
+<re_pri>ichi1</re_pri>
+<re_pri>news1</re_pri>
+<re_pri>nf04</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>right-wing</gloss>
+<gloss g_lang="fr">aile droite (oiseau, armée, parti politique, base-ball)</gloss>
+<gloss g_lang="ru">пра́вое крыло́</gloss>
+<gloss g_lang="ru">пра́вый фланг</gloss>
+<gloss g_lang="de">rechter Flügel</gloss>
+</sense>
+<sense>
+<gloss g_lang="de">{Sport}</gloss>
+<gloss g_lang="de">rechte Flanke</gloss>
+<gloss g_lang="de">rechter Flügel</gloss>
+</sense>
+<sense>
+<gloss g_lang="de">die Rechte</gloss>
+</sense>
+</entry>
+</JMdict>
