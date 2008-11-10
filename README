@@ -1,0 +1,3 @@
+ruby-jdict is a Rubygem interface to Jim Breen's Japanese dictionaries
+
+It is licensed under a modified BSD license, found in the file `COPYING` in this same directory
