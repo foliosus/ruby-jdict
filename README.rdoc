@@ -1,0 +1,34 @@
+= Ruby-JDict
+
+  Ruby gem for accessing Jim Breen's Japanese dictionaries
+
+== Install
+
+  gem install ruby-jdict --source http://gems.github.com
+
+
+== Usage
+
+Let's say you're making a Japanese to English dictionary web application in Rails, and want to access Jim Breen's Japanese dictionaries.
+
+class Dictionary
+  include JDict::Dictionary #abstract class, never directly instantiated
+  include JDict::JMDict
+  include JDict::KanjiDict
+  include JDict::ExampleSentences
+
+  def initialize
+  end
+
+  def search
+  end
+
+  def entry_by_id
+
+  def size
+  end
+end
+
+You can search the dictionary like this:
+
+  Dictionary.new.search(phrase)

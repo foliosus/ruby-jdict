@@ -1,5 +1,6 @@
 .DS_STORE
 */.DS_STORE
-dictionaries/JMdict
-dictionaries/kanjidic2.xml
-dictionaries/examples.utf
+dictionaries/*
+pkg
+doc
+manifest

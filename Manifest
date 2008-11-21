@@ -1,0 +1,15 @@
+COPYING
+dictionaries/DICTS_GO_HERE
+dictionaries/examples.utf
+dictionaries/JMdict
+dictionaries/kanjidic2.xml
+lib/dictionary.rb
+lib/jmdict.rb
+Rakefile
+README
+README.rdoc
+spec/dictionary_spec.rb
+spec/fixtures/feeds/sample_entry.xml
+spec/jmdict_spec.rb
+spec/spec_helper.rb
+Manifest

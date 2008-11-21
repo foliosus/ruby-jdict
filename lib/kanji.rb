@@ -1,0 +1,2 @@
+class Kanji
+end

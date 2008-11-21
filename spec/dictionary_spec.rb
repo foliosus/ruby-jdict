@@ -1,12 +1,12 @@
 require File.dirname(__FILE__) + '/spec_helper'
-require File.dirname(__FILE__) + '/../lib/dictionary'
-require File.dirname(__FILE__) + '/../lib/jmdict'
+require BASE_PATH + '/lib/dictionary'
+require BASE_PATH + '/lib/jmdict'
 
 module DictionarySpecHelper
   JMDICT_PATH = File.join(BASE_PATH+'/dictionaries/JMdict')
+  INDEX_PATH  = File.join(BASE_PATH+'/index')
   
   def mock_index
-    
   end
   
   class Increase
@@ -45,94 +45,66 @@ include DictionarySpecHelper
 
 describe Dictionary do
   before do
-    @dictionary = Dictionary.new
+    @dictionary = Dictionary.new(INDEX_PATH)
   end
     
-  it "should be searchable" do
+  it "is searchable" do
     @dictionary.should respond_to(:search)
   end
-  
-  it "should be able to load from a dictionary file" do
-    @dictionary.should respond_to(:load)
-  end
-  
-  it "should be able to build a full-text search index" do
-    @dictionary.should respond_to(:build_index) # and return an index
-  end
-  
-  it "should be able to rebuild the full-text search index" do
-    @dictionary.should respond_to(:rebuild_index)
-  end
-  
-  it "should be able to destroy an existing full-text search index" do
-    @dictionary.should respond_to(:destroy_index)
+    
+  it "can tell you whether or not it's loaded" do
+    @dictionary.should respond_to(:loaded?)
   end
 end
 
 describe Dictionary, "after initialization" do
   before do
-    @dictionary = Dictionary.new
+    @dictionary = Dictionary.new(INDEX_PATH)
   end
   
-  it "should have no entries" do
+  it "has no entries" do
     @dictionary.size.should == 0
   end
   
-  it "should have an empty entries cache" do
+  it "has an empty entries cache" do
     @dictionary.entries_cache.empty?
   end
 end
 
 describe Dictionary, "when loading from a dictionary file" do
   before do
-    @dictionary = Dictionary.new
+    @dictionary = Dictionary.new(INDEX_PATH)
   end
 
-  it "should raise an error when an invalid dictionary path is specified" do
+  it "raises an error when an invalid dictionary path is specified" do
     lambda { @dictionary.load('foo') }.should raise_error
   end
   
-  it "should have at least 1 entry" do
-    pending("implement loading from XML")
+  it "has at least 1 entry" do
+    pending("implement loading from index")
     @dictionary.load(JMDICT_PATH)
     @dictionary.size.should > 0
+  end
+  
+  it "says it's loaded" do
+    pending("implement loading from index")
+    @dictionary.load(JMDICT_PATH)
+    # @dictionary.loaded?.should == true
+    @dictionary.loaded?.should equal(true)
   end
 end
 
 describe Dictionary, "when loading from a dictionary file (already loaded)" do
   before do
-    @dictionary = Dictionary.new
+    @dictionary = Dictionary.new(INDEX_PATH)
   end
   
-  it "shouldn't change the dictionary's size if it's already been loaded"  
-end
-
-describe Dictionary, " when building the full-text search index" do
-  before do
-    @dictionary = Dictionary.new
-  end
-  
-  it "should raise an error if the dictionary isn't loaded yet"
-  it "should raise an error when an invalid index path is specified" do
-    lambda { @dictionary.rebuild_index('foo') }.should raise_error
-  end
-end
-
-describe Dictionary, "when rebuilding the full-text search index" do
-  it "should raise an error if an index isn't built yet"
-  it "should raise an error when an invalid index path is specified" do
-    lambda { @dictionary.rebuild_index('foo') }.should raise_error
-  end
-end
-
-describe Dictionary, "when destroying the full-text search index" do
-  it "should raise an error if the specified search index does not exist"
-  it "should delete an index if it exists"
+  it "has the same size as it did before being loaded"
 end
 
 describe Dictionary, "when searching" do
   before do
-    @dictionary = Dictionary.new
+    @dictionary = Dictionary.new(INDEX_PATH)
   end
   
   it "should raise an error if an index isn't built yet"

@@ -1,7 +1,9 @@
 require 'rubygems'
 require 'spec'
 
-BASE_PATH = File.dirname(__FILE__) + '/..'
+BASE_PATH   = File.dirname(__FILE__) + '/..'
+INDEX_PATH  = BASE_PATH + '/index'
+JMDICT_PATH = BASE_PATH + '/dictionaries/JMdict'
 
 ##
 # rSpec Hash additions.
