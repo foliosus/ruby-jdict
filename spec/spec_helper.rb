@@ -1,8 +1,10 @@
 require 'rubygems'
 require 'spec'
 
+$DEBUG = true
+
 BASE_PATH   = File.dirname(__FILE__) + '/..'
-INDEX_PATH  = BASE_PATH + '/index'
+INDEX_PATH  = BASE_PATH + '/test_index'
 JMDICT_PATH = BASE_PATH + '/dictionaries/JMdict'
 
 ##

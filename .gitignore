@@ -1,6 +1,7 @@
 .DS_STORE
 */.DS_STORE
 dictionaries/*
+index/*
 pkg
 doc
 manifest

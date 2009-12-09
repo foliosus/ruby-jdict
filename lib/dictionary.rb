@@ -2,10 +2,11 @@ require File.dirname(__FILE__) + '/index'
 
 class Dictionary
   attr_reader :entries_cache, :lazy_index_loading
+  
   def initialize(index_path, dictionary_path=nil, lazy_index_loading=true)
     path_specified = dictionary_path.nil? ? false : true
     if path_specified and not File.exists? dictionary_path
-      raise Exception.new("Dictionary not found at path #{dict_path}")
+      raise "Dictionary not found at path #{dict_path}"
     end
     @dictionary_path = dictionary_path
     @lazy_index_loading = lazy_index_loading

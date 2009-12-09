@@ -3,8 +3,9 @@ require BASE_PATH + '/lib/dictionary'
 require BASE_PATH + '/lib/jmdict'
 require BASE_PATH + '/lib/index'
 
-module IndexSpecHelper
+require 'fileutils'
 
+module IndexSpecHelper
 end
 
 describe DictIndex do
@@ -12,6 +13,11 @@ describe DictIndex do
   
   before do
     @index = DictIndex.new(INDEX_PATH, JMDICT_PATH)
+  end
+  
+  it "is searchable" do
+    @index.should respond_to(:search)
+    
   end
   
   it "is buildable" do
@@ -24,10 +30,6 @@ describe DictIndex do
   
   it "tells whether it's built or not" do
     @index.should respond_to(:built?)
-  end
-  
-  it "raises an error if an invalid index path is specified" do
-    lambda { DictIndex.new('bad_index_path', JMDICT_PATH) }.should raise_error
   end
   
   it "raises an error if an invalid dictionary path is specified" do
@@ -64,7 +66,11 @@ describe DictIndex, "when building," do
 end
 
 describe DictIndex, "when rebuilding" do
+  include FileUtils
+  
   it "raises an error if it doesn't already exist" do
+    rm_rf(INDEX_PATH)
+    File.exists?(INDEX_PATH).should == false
     lambda {
       DictIndex.new(INDEX_PATH, JMDICT_PATH).rebuild
       }.should raise_error

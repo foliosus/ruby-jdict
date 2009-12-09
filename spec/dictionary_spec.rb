@@ -55,6 +55,11 @@ describe Dictionary do
   it "can tell you whether or not it's loaded" do
     @dictionary.should respond_to(:loaded?)
   end
+  
+  it "should generate fixtures" do
+    pending
+    @dictionary.should respond_to(:generate_fixtures)
+  end
 end
 
 describe Dictionary, "after initialization" do
@@ -74,10 +79,6 @@ end
 describe Dictionary, "when loading from a dictionary file" do
   before do
     @dictionary = Dictionary.new(INDEX_PATH)
-  end
-
-  it "raises an error when an invalid dictionary path is specified" do
-    lambda { @dictionary.load('foo') }.should raise_error
   end
   
   it "has at least 1 entry" do
