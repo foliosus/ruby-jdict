@@ -2,7 +2,8 @@
 */.DS_STORE
 dictionaries/*
 index/*
-pkg
-doc
+pkg/*
+doc/*
 manifest
 sunspot-solr.pid
+*.gem

@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.email        = ['jonathan@soliddesigngroup.net']
   s.version      = JDict::Version
   s.platform     = Gem::Platform::RUBY
-  s.files        = Dir.glob("{examples,lib,spec}/**/*") + %w[License Rakefile README.rdoc]
+  s.files        = Dir.glob("{examples,lib,spec}/**/*") + %w[LICENSING README Rakefile README.rdoc]
 
   s.add_dependency              'libxml-ruby', '~> 1.1.3'
   s.add_development_dependency  'rspec',       '~> 1.3.0'
