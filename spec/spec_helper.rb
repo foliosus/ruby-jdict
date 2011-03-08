@@ -1,5 +1,6 @@
-require 'rubygems'
-require 'spec'
+require 'rubygems'      #use gems
+require 'bundler/setup' #load up the bundled environment
+# require 'spec'          #test framework
 
 $DEBUG = true
 

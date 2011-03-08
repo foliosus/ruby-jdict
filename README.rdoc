@@ -12,6 +12,12 @@
 
   gem install ruby-jdict --source http://gems.github.com
 
+== Test
+
+	Run against the RSpec test suite with the following command:
+
+  spec .
+
 
 == Usage
 

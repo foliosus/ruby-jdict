@@ -1,9 +1,10 @@
 #turn on debug mode
 $DEBUG = true
 
-require 'rubygems'  #use gems
+require 'rubygems'      #use gems
+require 'bundler/setup' #load up the bundled environment
+
 require 'ferret'    #lib - full-text search indexing 
-require 'libxml'    #lib - xml parsing
 
 require 'constants' #XML constants from the dictionary file
 
