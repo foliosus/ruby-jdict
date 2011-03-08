@@ -1,3 +1,5 @@
+require 'rubygems'
+
 require File.dirname(__FILE__) + '/spec_helper'
 require BASE_PATH + '/lib/dictionary'
 require BASE_PATH + '/lib/jmdict'
@@ -15,21 +17,26 @@ describe DictIndex do
     @index = DictIndex.new(INDEX_PATH, JMDICT_PATH)
   end
   
+  # Searching
   it "is searchable" do
     @index.should respond_to(:search)
     
   end
   
+  # Building
   it "is buildable" do
     @index.should respond_to(:build) # and return an index
   end
-  
   it "is rebuildable" do
     @index.should respond_to(:rebuild)
   end
-  
   it "tells whether it's built or not" do
     @index.should respond_to(:built?)
+  end
+  
+  # Destroying
+  it "is destroyable" do
+    @index.should respond_to(:destroy)
   end
   
   it "raises an error if an invalid dictionary path is specified" do

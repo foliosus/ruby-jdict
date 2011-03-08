@@ -1,6 +1,6 @@
-require File.dirname(__FILE__) + '/spec_helper'
-require File.dirname(__FILE__) + '/../lib/dictionary'
-require File.dirname(__FILE__) + '/../lib/jmdict'
+require 'spec_helper'
+require BASE_PATH + '/lib/dictionary'
+require BASE_PATH + '/lib/jmdict'
 
 module JMDictSpecHelper
   INDEX_PATH  = File.join(BASE_PATH+'/index')

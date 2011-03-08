@@ -1,8 +1,7 @@
 # Constants and descriptions for important elements/attributes
 # of the JMdict XML dictionary.                               
 # Descriptions come from JMdict.dtd (document type definition)
-module Constants
-  module JMDict
+module JMDictConstants
     
     # TODO: change these strings to symbols ?
     # XML elements of the JMDict file
@@ -11,7 +10,7 @@ module Constants
       # general information and sense elements. Each entry must have at 
       # least one kana element and one sense element. Others are optional.
       ENTRY          = 'entry'
-      SEQUENCE = 'ent_seq'
+      SEQUENCE       = 'ent_seq'
 
       # This element will contain a word or short phrase in Japanese 
       # which is written using at least one kanji. The valid characters are
@@ -45,7 +44,7 @@ module Constants
     # XML attributes of the JMDict file
     module Attributes
       # Attribute specificying the gloss language
-      LANGUAGE     = 'g_lang'
+      LANGUAGE       = 'g_lang'
     end
   
     # Constants for selecting the search language.   
@@ -62,5 +61,4 @@ module Constants
       GERMAN   = :de
       RUSSIAN  = :ru
     end
-  end
 end

@@ -1,6 +1,6 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require 'spec_helper'
 require BASE_PATH + '/lib/dictionary'
-require BASE_PATH + '/lib/jmdict'
+#require BASE_PATH + '/lib/jmdict'
 
 module DictionarySpecHelper
   JMDICT_PATH = File.join(BASE_PATH+'/dictionaries/JMdict')

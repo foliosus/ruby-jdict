@@ -1,27 +1,38 @@
-#full-text search index
-require 'ferret'
-#xml
-require 'libxml'
-include LibXML
+#turn on debug mode
+$DEBUG = true
 
-#constants
-BASE_PATH   = File.dirname(__FILE__) + '/..'
-require BASE_PATH + '/lib/constants'
-require BASE_PATH + '/lib/entry'
-require BASE_PATH + '/lib/kanji'
-require BASE_PATH + '/lib/kana'
+require 'rubygems'  #use gems
+require 'ferret'    #lib - full-text search indexing 
+require 'libxml'    #lib - xml parsing
 
-Ferret.locale = "en_US.UTF-8" # Ensure that Ferret is unicode friendly
-                              # TODO: make sure en_US.UTF-8 is the correct constant
+require 'constants' #XML constants from the dictionary file
 
+require 'entry'     #dictionary elements
+require 'kanji'     #...
+require 'kana'      #...
+
+include  Ferret   
+include  LibXML
+
+# Ensure that Ferret is unicode friendly
+# TODO: make sure en_US.UTF-8 is the correct constant
+Ferret.locale = "en_US.UTF-8"
+                              
 class DictIndex
-  include Constants
-  include Ferret #full-text search indexing library
   
-  LANGUAGE_DEFAULT = Constants::JMDict::Languages::ENGLISH
+  LANGUAGE_DEFAULT = JMDictConstants::Languages::ENGLISH
   NUM_ENTRIES_TO_INDEX = 5
   
   attr_reader :path
+  # Initialize a full-text search index backend for JMdict,
+  # using the "Ferret" lib
+  #
+  # index_path      <= desired filesystem path where you'd like
+  #                    the *search index* stored
+  # dictionary_path <= desired filesystem path where you'd like
+  #                    the *dictionary* stored
+  # lazy_loading    <= lazily load the index just when it's needed,
+  #                    instead of building it ahead of time
   def initialize(index_path, dictionary_path=nil, lazy_loading=true)
     
     raise "Index path was nil" if index_path.nil?
@@ -40,10 +51,15 @@ class DictIndex
     (0..10).map { |x| analyzer["kana_#{x}".intern] = re_analyzer }
     analyzer[:kanji] = re_analyzer
     
-    create_index = lazy_loading ? false : true
+    #should we create the index?
+    create_index = lazy_loading ? false : true #if it's lazy loading...
+    
+    #create the (unbuilt) index
     @ferret_index = Index::Index.new(:path     => @path,
                                      :analyzer => analyzer,
                                      :create   => create_index)
+                                     
+    #build the index right now if "lazy loading" isn't on
     build unless lazy_loading
   end
   
@@ -51,6 +67,7 @@ class DictIndex
   def search(term, language=LANGUAGE_DEFAULT)
     raise "Index not found at path #{index_path}" unless File.exists? index_path
     
+    # no results yet...
     results = []
     
     # search for:
@@ -60,8 +77,12 @@ class DictIndex
     query = 'kanji|' + (0..10).map { |x| "kana_#{x}|sense_#{x}" }.join('|') + ":\"#{term}\""
     
     @ferret_index.search_each(query, :limit => NUM_RESULTS) do |docid, score|
+      # load entry from the index. from cache, if it's available
       # load from cache if it's available
-      entry = @entries_cache[docid]
+      if entry = @entries_cache[docid]
+        entry = Entry.from_index_doc(@ferret_index[docid].load)
+        @entries_cache[docid] = entry
+      end        
       
       # load entry from the index
       if entry.nil?
@@ -82,6 +103,7 @@ class DictIndex
       
       score = 1.0 if is_exact_match
       
+      # add the result
       results << [score, entry]
     end
     results.sort { |x, y| y[0] <=> x[0] }.map { |x| x[1] }
@@ -92,7 +114,6 @@ class DictIndex
   # build the full-text search index
   #   overwrite: force a build even if the index path already exists
   #   returns the number of indexed entries
-  #
   def build(overwrite=false, dictionary_path=nil)
     @dictionary_path = dictionary_path unless dictionary_path.nil?
     raise "No dictionary path was provided" if @dictionary_path.nil?
@@ -122,22 +143,22 @@ class DictIndex
         # start-of-element node
         when XML::Reader::TYPE_ELEMENT
           case reader.name
-            when JMDict::Elements::SEQUENCE
+            when JMDictConstants::Elements::SEQUENCE
               entry_sequence_num = reader.next_text
 
             # TODO: Raise an exception if reader.next_text.empty? inside the when's
             #       JMdict shouldn't have any empty elements, I believe.
-            when JMDict::Elements::KANJI
+            when JMDictConstants::Elements::KANJI
               text = reader.next_text
               kanji << text unless text.empty?
 
-            when JMDict::Elements::KANA
+            when JMDictConstants::Elements::KANA
               text = reader.next_text
               kana << text unless text.empty?
 
-            when JMDict::Elements::GLOSS
+            when JMDictConstants::Elements::GLOSS
               # TODO: bug— language is always 'en', even when gloss is not english
-              language = reader[JMDict::Attributes::LANGUAGE] || LANGUAGE_DEFAULT
+              language = reader[JMDictConstants::Attributes::LANGUAGE] || LANGUAGE_DEFAULT
               text = reader.next_text
               unless text.empty?
                 (glosses[language] ||= []) << text
@@ -156,7 +177,7 @@ class DictIndex
         when XML::Reader::TYPE_END_ELEMENT
           case reader.name
 
-            when JMDict::Elements::SENSE
+            when JMDictConstants::Elements::SENSE
               # build sense
               senses << Sense.new(part_of_speech, glosses)
               # glosses.each do |language, texts|
@@ -171,7 +192,7 @@ class DictIndex
               part_of_speech = nil
 
             # we're at the end of the entry element, so index it
-            when JMDict::Elements::ENTRY
+            when JMDictConstants::Elements::ENTRY
               raise "No kana found for this entry!" if kana.empty?
               
               #index

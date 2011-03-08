@@ -1,11 +1,12 @@
 require BASE_PATH + '/lib/constants'
 require BASE_PATH + '/lib/sense'
 
+#include Constants #XML constants from the dictionary file
+
 # Entries consist of kanji elements, kana elements, 
 # general information and sense elements. Each entry must have at 
 # least one kana element and one sense element. Others are optional.
 class Entry
-  include Constants
   
   attr_accessor :kanji, :kana, :senses
   # Create a new Entry
@@ -55,7 +56,7 @@ class Entry
       sense = ''
       sense << "[[#{s.part_of_speech}]] " if s.part_of_speech
       # TODO: add support for other languages than English
-      sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == Constants::JMDict::Languages::ENGLISH }.compact.join
+      sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JMDictConstants::Languages::ENGLISH }.compact.join
       
       doc["sense_#{i}".intern] = sense
     end

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/index'
+require 'index'
 
 class Dictionary
   attr_reader :entries_cache, :lazy_index_loading
@@ -8,28 +8,36 @@ class Dictionary
     if path_specified and not File.exists? dictionary_path
       raise "Dictionary not found at path #{dict_path}"
     end
-    @dictionary_path = dictionary_path
+    
+    #store some args for future reference
+    @dictionary_path    = dictionary_path
     @lazy_index_loading = lazy_index_loading
     
-    @entries = []
+    @entries       = []
     @entries_cache = []
     
+    #instantiate and load the full-text search index
     @index = DictIndex.new(index_path, dictionary_path)
-    load if lazy_index_loading
+    load_index unless lazy_index_loading
   end
 
-  def size;    @entries.size; end  
-  def loaded?; @index.built?; end
+  def size
+    @entries.size
+  end
+  def loaded?
+    @index.built?
+  end
   
   def search(phrase)
     results = []
     return results if phrase.empty?
     
-    load if lazy_index_loading and not loaded?
+    load_index if lazy_index_loading and not loaded?
   end
   
-private
-  def load
+  private
+  
+  def load_index
     if loaded?
       Exception.new("Dictionary index is already loaded")
     else

@@ -1,6 +1,12 @@
 = Ruby-JDict
 
   Ruby gem for accessing Jim Breen's Japanese dictionaries
+	Can currently access the following:
+	* JMdict (Japanese-English dictionary)
+	* KANJIDIC (Kanji dictionary)
+	* Example sentences
+	
+  Dictionary files: http://www.csse.monash.edu.au/~jwb/wwwjdicinf.html#dicfil_tag
 
 == Install
 
@@ -31,4 +37,5 @@ end
 
 You can search the dictionary like this:
 
-  Dictionary.new.search(phrase)
+  dict = Dictionary.new
+  results = dict.search(phrase)
