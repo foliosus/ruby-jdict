@@ -1,9 +1,14 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    builder (3.0.0)
     diff-lcs (1.1.2)
+    escape (0.0.4)
     libxml-ruby (1.1.4)
     nokogiri (1.4.4)
+    pr_geohash (1.0.0)
+    rsolr (0.12.1)
+      builder (>= 2.1.2)
     rspec (2.5.0)
       rspec-core (~> 2.5.0)
       rspec-expectations (~> 2.5.0)
@@ -12,6 +17,10 @@ GEM
     rspec-expectations (2.5.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.5.0)
+    sunspot (1.2.1)
+      escape (= 0.0.4)
+      pr_geohash (~> 1.0)
+      rsolr (= 0.12.1)
 
 PLATFORMS
   ruby
@@ -20,3 +29,4 @@ DEPENDENCIES
   libxml-ruby
   nokogiri
   rspec
+  sunspot
