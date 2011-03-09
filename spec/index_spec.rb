@@ -20,7 +20,6 @@ describe DictIndex do
   # Searching
   it "is searchable" do
     @index.should respond_to(:search)
-    
   end
   
   # Building

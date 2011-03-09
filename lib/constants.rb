@@ -49,10 +49,8 @@ module JMDictConstants
   
     # Constants for selecting the search language.   
     # Used in the "gloss" element's g_lang attribute.
-    #   :en never appears as a g_lang constant because gloss
-    #   is assumed to be English when not specified
-    #   :jp never appears as a g_lang because
-    #   the dictionary itself pivots around Japanese
+    #   :en never appears as a g_lang constant because gloss is assumed to be English when not specified
+    #   :jp never appears as a g_lang because the dictionary itself pivots around Japanese
     module Languages
       JAPANESE = :jp
       ENGLISH  = :en
