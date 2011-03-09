@@ -1,22 +1,21 @@
 = Ruby-JDict
 
-  Ruby gem for accessing Jim Breen's Japanese dictionaries
-	Can currently access the following:
+  Ruby gem for accessing Jim Breen's Japanese dictionaries. Can currently access the following:
 	* JMdict (Japanese-English dictionary)
 	* KANJIDIC (Kanji dictionary)
 	* Example sentences
 	
-  Dictionary files: http://www.csse.monash.edu.au/~jwb/wwwjdicinf.html#dicfil_tag
+  Dictionary files are located at: http://www.csse.monash.edu.au/~jwb/wwwjdicinf.html#dicfil_tag
 
 == Install
 
-  gem install ruby-jdict --source http://gems.github.com
+  gem install ruby-jdict
 
 == Test
 
 	Run against the RSpec test suite with the following command:
 
-  spec .
+  rspec spec
 
 
 == Usage
