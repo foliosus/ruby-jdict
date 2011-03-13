@@ -2,6 +2,7 @@
 */.DS_STORE
 dictionaries/*
 index/*
+test_index/*
 pkg/*
 doc/*
 manifest

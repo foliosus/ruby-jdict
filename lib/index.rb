@@ -5,6 +5,7 @@ require 'rubygems'      #use gems
 require 'bundler/setup' #load up the bundled environment
 
 require 'ferret'    #lib - full-text search indexing 
+require 'libxml'
 
 require 'constants' #XML constants from the dictionary file
 
