@@ -17,6 +17,10 @@
 
   spec .
 
+  If you want a prettier format:
+
+  spec . --color --format specdoc
+
 
 == Usage
 
