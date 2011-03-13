@@ -12,7 +12,7 @@ require 'entry'     #dictionary elements
 require 'kanji'     #...
 require 'kana'      #...
 
-include  Ferret   
+include  Ferret
 include  LibXML
 
 # Ensure that Ferret is unicode friendly
