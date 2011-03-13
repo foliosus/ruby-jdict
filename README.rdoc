@@ -15,7 +15,7 @@
 
 	Run against the RSpec test suite with the following command:
 
-  rspec spec
+  spec .
 
 
 == Usage
