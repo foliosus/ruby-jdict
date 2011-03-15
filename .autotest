@@ -1,0 +1,20 @@
+# 
+# If you’ve ever had the setup of using cucumber, autospec, and sunspot SOLR in one your rails applications, chances are you’ve tried hitting your SOLR test instance just to verify that the whole stack works.
+# 
+# This is all good (although some might argue that you should use mock / stub objects for everything), until you get this weird scenario where autospec just keeps running and running and running… and running?!? Your cucumber scenarios.
+# 
+# Moving past the Groundhog Day
+# 
+# The code below fixes the dreaded infinite running of your features:
+# 
+# Autotest.add_hook :initialize do |at|
+#   %w{.svn .hg .git vendor solr}.each {|exception| 
+#     at.add_exception(exception)
+#   }
+# end
+# Basically, since the Cucumber scenarios modify the solr directory, we just have to add it to autotest’s ignore list.
+#
+#src: http://www.pipetodevnull.com/past/2009/12/7/cucumber_autospec_wont_stop_running/
+Autotest.add_hook :initialize do |at|
+  at.add_exception(/^\.\/(\.git|vendor|solr|index|test_index|dictionaries)/)
+end
