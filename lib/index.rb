@@ -1,6 +1,6 @@
 # encoding: utf-8
 # turn on debug mode
-$DEBUG = false
+$DEBUG = true
 
 require 'rubygems'      #use gems
 require 'bundler/setup' #load up the bundled environment
@@ -25,7 +25,7 @@ module JDict
   class DictIndex
     
     LANGUAGE_DEFAULT = JDict::JMDictConstants::Languages::ENGLISH
-    NUM_ENTRIES_TO_INDEX = 5
+    NUM_ENTRIES_TO_INDEX = 50
     NUM_RESULTS = 10
     
     attr_reader :path
@@ -141,7 +141,7 @@ module JDict
       reader = nil
       Dir.chdir(Dir.pwd) do
         jmdict_path = File.join(@dictionary_path)
-        reader = XML::Reader.file(jmdict_path, :encoding => XML::Encoding::UTF_8) # create a reader for JMdict
+        reader = XML::Reader.file(jmdict_path, :encoding => XML::Encoding::UTF_8, :options => XML::Parser::Options::NOENT) # create a reader for JMdict
         raise "Failed to create XML::Reader for #{@dictionary_path}!" if reader.nil?
       end
 
@@ -151,7 +151,7 @@ module JDict
       # components of an entry
       kanji, kana, senses = [], [], []
       glosses = {}
-      part_of_speech = nil
+      parts_of_speech = []
       
 
       # read until the end
@@ -177,8 +177,8 @@ module JDict
             kana << text unless text.empty?
 
           when JDict::JMDictConstants::Elements::GLOSS
-            # TODO: bug— language is always 'en', even when gloss is not english
             language = reader[JDict::JMDictConstants::Attributes::LANGUAGE] || LANGUAGE_DEFAULT
+            language = language.intern
             text = reader.next_text
             unless text.empty?
               (glosses[language] ||= []) << text
@@ -189,8 +189,13 @@ module JDict
             #       Then set the SUBST_ENTITIES property and uncomment
             #       this 'when' clause. Hopefully it will be able to read
             #       part-of-speeches then
-            # when PART_OF_SPEECH_ELEMENT
-            #   part_of_speech = reader.next_text
+          when JDict::JMDictConstants::Elements::PART_OF_SPEECH
+            text = reader.next_text
+            parts_of_speech << text unless text.empty?
+
+          when JDict::JMDictConstants::Elements::CROSSREFERENCE
+            text = reader.next_text
+
           end
 
         # end-of-element node
@@ -199,17 +204,16 @@ module JDict
 
           when JDict::JMDictConstants::Elements::SENSE
             # build sense
-            senses << Sense.new(part_of_speech, glosses)
+            senses << Sense.new(parts_of_speech, glosses)
             # glosses.each do |language, texts|
-            #   senses << Sense.new(part_of_speech,
+            #   senses << Sense.new(parts_of_speech,
             #                       texts.join(', ').strip,
             #                       language)
             # end
             
-            
             # clear data for the next sense
             glosses = {}
-            part_of_speech = nil
+            parts_of_speech = []
 
           # we're at the end of the entry element, so index it
           when JDict::JMDictConstants::Elements::ENTRY

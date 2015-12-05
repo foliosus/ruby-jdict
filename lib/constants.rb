@@ -40,25 +40,31 @@ module JDict
       # Japanese word. This element would normally be present, however it 
       # may be omitted in entries which are purely for a cross-reference.
       GLOSS          = 'gloss'
+
+      CROSSREFERENCE = 'xref'
     end
     
     # XML attributes of the JMDict file
     module Attributes
       # Attribute specificying the gloss language
-      LANGUAGE       = 'g_lang'
+      LANGUAGE       = 'xml:lang'
     end
     
     # Constants for selecting the search language.   
-    # Used in the "gloss" element's g_lang attribute.
-    #   :en never appears as a g_lang constant because gloss is assumed to be English when not specified
-    #   :jp never appears as a g_lang because the dictionary itself pivots around Japanese
+    # Used in the "gloss" element's xml:lang attribute.
+    #   :eng never appears as a xml:lang constant because gloss is assumed to be English when not specified
+    #   :jpn never appears as a xml:lang because the dictionary itself pivots around Japanese
     module Languages
-      JAPANESE = :jp
-      ENGLISH  = :en
-      DUTCH    = :nl
-      FRENCH   = :fr
-      GERMAN   = :de
-      RUSSIAN  = :ru
+      JAPANESE  = :jpn
+      ENGLISH   = :eng
+      DUTCH     = :dut
+      FRENCH    = :fre
+      GERMAN    = :ger
+      RUSSIAN   = :rus
+      SPANISH   = :spa
+      SLOVENIAN = :slv
+      SWEDISH   = :swe
+      HUNGARIAN = :hun
     end
   end
 end

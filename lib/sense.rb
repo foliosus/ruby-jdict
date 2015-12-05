@@ -4,11 +4,11 @@
 # sense elements will be employed.
 module JDict
   class Sense
-    attr_reader :part_of_speech, :glosses
+    attr_reader :parts_of_speech, :glosses
     #
     # Create a new +Sense+
-    def initialize(part_of_speech, glosses)
-      @part_of_speech, @glosses = part_of_speech, glosses
+    def initialize(parts_of_speech, glosses)
+      @parts_of_speech, @glosses = parts_of_speech, glosses
     end
   end
 end

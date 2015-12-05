@@ -34,9 +34,9 @@ PLATFORMS
 
 DEPENDENCIES
   autotest
-  ferret
+  ferret (~> 0.11.8.6)
   libxml-ruby
-  psych
+  psych (~> 2.0.15)
   rspec (= 3.4.0)
   sunspot
 

@@ -35,44 +35,44 @@ module JDict
         when SENSE_RE
           ary = txt.scan(PART_OF_SPEECH_RE)
           senses << if ary.size == 1
-          part_of_speech = ary.to_s
-          Sense.new(part_of_speech, txt[(part_of_speech.length + 4)..-1].strip.split('**')) # ** is the sentinel sequence
-        else
-          Sense.new(nil, txt.strip.split('**')) # ** is the sentinel sequence
+            parts_of_speech = ary[0][0].split('$')
+            Sense.new(parts_of_speech, txt[(ary.to_s.length-1)..-1].strip.split('**')) # ** is the sentinel sequence
+          else
+            Sense.new(nil, txt[5..-1].strip.split('**')) # ** is the sentinel sequence
+          end
+        when KANA_RE
+          kana << txt.strip
         end
-      when KANA_RE
-        kana << txt.strip
       end
+      self.new(kanji, kana, senses)
     end
-    self.new(kanji, kana, senses)
-  end
 
-  # Generate a +Ferret::Document+ to add to the +Ferrex::Index+
-  #   index << e.to_index_doc
-  def to_index_doc
-    # kanji
-    doc = { :kanji => kanji }
-    
-    # kana
-    kana.each_with_index { |k, i| doc["kana_#{i}".intern] = k }
-    
-    # senses
-    senses.each_with_index do |s, i| 
-      sense = ''
-      sense << "[[#{s.part_of_speech}]] " if s.part_of_speech
-      # TODO: add support for other languages than English
-      sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JDict::JMDictConstants::Languages::ENGLISH }.compact.join
+    # Generate a +Ferret::Document+ to add to the +Ferrex::Index+
+    #   index << e.to_index_doc
+    def to_index_doc
+      # kanji
+      doc = { :kanji => kanji }
       
-      doc["sense_#{i}".intern] = sense
+      # kana
+      kana.each_with_index { |k, i| doc["kana_#{i}".intern] = k }
+      
+      # senses
+      senses.each_with_index do |s, i| 
+        sense = ''
+        sense << "[[#{s.parts_of_speech.join("$")}]] " if s.parts_of_speech
+        # TODO: add support for other languages than English
+        sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JDict::JMDictConstants::Languages::ENGLISH }.compact.join
+        
+        doc["sense_#{i}".intern] = sense
+      end
+      
+      doc
     end
     
-    doc
+    # Get an array of +Senses+ for the specified language
+    #   senses = Entry.senses(:en)
+    def senses_by_language(l)
+      senses.select { |s| s.language == l }
+    end
   end
-  
-  # Get an array of +Senses+ for the specified language
-  #   senses = Entry.senses(:en)
-  def senses_by_language(l)
-    senses.select { |s| s.language == l }
-  end
-end
 end
