@@ -65,7 +65,7 @@ describe DictIndex, "when building," do
     # .
     # ..
     # ^-------- an empty directory has only these 2 entries
-    Dir.entries(INDEX_PATH).should have_at_least(3).things
+    expect(Dir.entries(INDEX_PATH).size).to be >= 3
   end
   
   it "loads from a dictionary file"
