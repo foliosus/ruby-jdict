@@ -115,7 +115,7 @@ module JDict
       results.sort { |x, y| y[0] <=> x[0] }.map { |x| x[1] }
     end
     
-    def built?; @ferret_index.size > 0; end
+    def built?; File.exists? @path; end
     
     # build the full-text search index
     #   overwrite: force a build even if the index path already exists
