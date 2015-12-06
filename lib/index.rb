@@ -51,13 +51,13 @@ module JDict
       (0..10).map { |x| analyzer["kana_#{x}".intern] = re_analyzer }
       analyzer[:kanji] = re_analyzer
       
-      #should we create the index?
-      create_index = !lazy_loading && !built? ? true : false
-
       #create the (unbuilt) index
       @ferret_index = Index::Index.new(:path     => @path,
                                        :analyzer => analyzer,
                                        :create   => create_index)
+
+      #should we build the index?
+      create_index = !lazy_loading && !built? ? true : false
 
       #build the index right now if "lazy loading" isn't on and no index was found
       build if create_index
