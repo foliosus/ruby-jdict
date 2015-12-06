@@ -43,9 +43,9 @@ end
 module DictionarySpec
 include DictionarySpecHelper
 
-describe Dictionary do
+describe JDict::Dictionary do
   before do
-    @dictionary = Dictionary.new(INDEX_PATH)
+    @dictionary = JDict::Dictionary.new(INDEX_PATH)
   end
     
   it "is searchable" do
@@ -62,9 +62,9 @@ describe Dictionary do
   end
 end
 
-describe Dictionary, "after initialization" do
+describe JDict::Dictionary, "after initialization" do
   before do
-    @dictionary = Dictionary.new(INDEX_PATH)
+    @dictionary = JDict::Dictionary.new(INDEX_PATH)
   end
   
   it "has no entries" do
@@ -76,9 +76,9 @@ describe Dictionary, "after initialization" do
   end
 end
 
-describe Dictionary, "when loading from a dictionary file" do
+describe JDict::Dictionary, "when loading from a dictionary file" do
   before do
-    @dictionary = Dictionary.new(INDEX_PATH)
+    @dictionary = JDict::Dictionary.new(INDEX_PATH)
   end
   
   it "has at least 1 entry" do
@@ -95,17 +95,17 @@ describe Dictionary, "when loading from a dictionary file" do
   end
 end
 
-describe Dictionary, "when loading from a dictionary file (already loaded)" do
+describe JDict::Dictionary, "when loading from a dictionary file (already loaded)" do
   before do
-    @dictionary = Dictionary.new(INDEX_PATH)
+    @dictionary = JDict::Dictionary.new(INDEX_PATH)
   end
   
   it "has the same size as it did before being loaded"
 end
 
-describe Dictionary, "when searching" do
+describe JDict::Dictionary, "when searching" do
   before do
-    @dictionary = Dictionary.new(INDEX_PATH)
+    @dictionary = JDict::Dictionary.new(INDEX_PATH)
   end
   
   it "should raise an error if an index isn't built yet"

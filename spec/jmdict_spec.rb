@@ -6,14 +6,14 @@ module JMDictSpecHelper
   INDEX_PATH  = File.join(BASE_PATH+'/index')
 end
 
-describe JMDict do
+describe JDict::JMDict do
   include JMDictSpecHelper
   
   before do
-    @jmdict = JMDict.new(JMDictSpecHelper::INDEX_PATH)
+    @jmdict = JDict::JMDict.new(JMDictSpecHelper::INDEX_PATH)
   end
   
   it do
-    @jmdict.should be_a_kind_of(Dictionary)
+    @jmdict.should be_a_kind_of(JDict::Dictionary)
   end
 end

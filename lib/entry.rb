@@ -61,7 +61,7 @@ module JDict
         sense = ''
         sense << "[[#{s.parts_of_speech.join("$")}]] " if s.parts_of_speech
         # TODO: add support for other languages than English
-        sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JDict::JMDictConstants::Languages::ENGLISH }.compact.join
+        sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JDict.configuration.language }.compact.join
         
         doc["sense_#{i}".intern] = sense
       end

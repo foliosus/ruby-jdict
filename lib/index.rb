@@ -1,7 +1,4 @@
 # encoding: utf-8
-# turn on debug mode
-$DEBUG = true
-
 require 'rubygems'      #use gems
 require 'bundler/setup' #load up the bundled environment
 
@@ -26,7 +23,6 @@ module JDict
     
     LANGUAGE_DEFAULT = JDict::JMDictConstants::Languages::ENGLISH
     NUM_ENTRIES_TO_INDEX = 50
-    NUM_RESULTS = 10
     
     attr_reader :path
     # Initialize a full-text search index backend for JMdict,
@@ -38,7 +34,7 @@ module JDict
     #                    the *dictionary* stored
     # lazy_loading    <= lazily load the index just when it's needed,
     #                    instead of building it ahead of time
-    def initialize(index_path, dictionary_path=nil, lazy_loading=true)
+    def initialize(index_path, dictionary_path=nil, lazy_loading=JDict.configuration.lazy_index_loading)
       raise "Index path was nil" if index_path.nil?
 
       path_specified = dictionary_path.nil? ? false : true
@@ -56,24 +52,15 @@ module JDict
       analyzer[:kanji] = re_analyzer
       
       #should we create the index?
-      create_index = lazy_loading ? false : true #if it's lazy loading...
+      create_index = !lazy_loading && !built? ? true : false
 
-      already_built = built?
-      if already_built
-        @ferret_index = Index::Index.new(:path     => @path,
-                                         :analyzer => analyzer)
-        @ferret_index.persist(@path, false)
-      else
-        puts "building index..."
-        @ferret_index = Index::Index.new(:path     => @path,
-                                        :analyzer => analyzer,
-                                        :create   => create_index)
-
-        #build the index right now if "lazy loading" isn't on
-        build unless lazy_loading or already_built
-      end
-      
       #create the (unbuilt) index
+      @ferret_index = Index::Index.new(:path     => @path,
+                                       :analyzer => analyzer,
+                                       :create   => create_index)
+
+      #build the index right now if "lazy loading" isn't on and no index was found
+      build if create_index
     end
     
     # Returns the search results as an array of +Entry+
@@ -91,7 +78,7 @@ module JDict
       #   sense... up to 10 fields
       query = 'kanji|' + (0..10).map { |x| "kana_#{x}|sense_#{x}" }.join('|') + ":\"#{term}\""
 
-      @ferret_index.search_each(query, :limit => NUM_RESULTS) do |docid, score|
+      @ferret_index.search_each(query, :limit => JDict.configuration.num_results) do |docid, score|
         # load entry from the index. from cache, if it's available
         # load from cache if it's available
         if entry = @entries_cache[docid]
@@ -109,7 +96,7 @@ module JDict
         # so let's help it.
         is_exact_match = false
         is_exact_match = entry.kanji == term ||
-                         entry.kana.any? { |k| k == term }
+          entry.kana.any? { |k| k == term }
         
         re = Regexp.new("#{term}", Regexp::IGNORECASE) # match the search term, ignoring case
         entry.senses.each do |s|
@@ -127,7 +114,7 @@ module JDict
       results.sort { |x, y| y[0] <=> x[0] }.map { |x| x[1] }
     end
     
-    def built?; File.exists? @path; end
+    def built?; @ferret_index.size > 0; end
     
     # build the full-text search index
     #   overwrite: force a build even if the index path already exists
@@ -145,8 +132,10 @@ module JDict
         raise "Failed to create XML::Reader for #{@dictionary_path}!" if reader.nil?
       end
 
+      puts "building index..."
+
       # whenever there is a reader error, print its block parameters
-      reader.set_error_handler { |*args| p args }
+      XML::Error.set_handler { |*args| p args }
 
       # components of an entry
       kanji, kana, senses = [], [], []
@@ -160,14 +149,14 @@ module JDict
         # check what type of node we're currently on
         case reader.node_type
 
-        # start-of-element node
+          # start-of-element node
         when XML::Reader::TYPE_ELEMENT
           case reader.name
           when JDict::JMDictConstants::Elements::SEQUENCE
             entry_sequence_num = reader.next_text
 
-          # TODO: Raise an exception if reader.next_text.empty? inside the when's
-          #       JMdict shouldn't have any empty elements, I believe.
+            # TODO: Raise an exception if reader.next_text.empty? inside the when's
+            #       JMdict shouldn't have any empty elements, I believe.
           when JDict::JMDictConstants::Elements::KANJI
             text = reader.next_text
             kanji << text unless text.empty?
@@ -184,11 +173,6 @@ module JDict
               (glosses[language] ||= []) << text
             end
 
-            # TODO: Add xmlTextReaderGetParserProp and xmlTextReaderSetParserProp
-            #       support to libxml-ruby.
-            #       Then set the SUBST_ENTITIES property and uncomment
-            #       this 'when' clause. Hopefully it will be able to read
-            #       part-of-speeches then
           when JDict::JMDictConstants::Elements::PART_OF_SPEECH
             text = reader.next_text
             parts_of_speech << text unless text.empty?
@@ -198,7 +182,7 @@ module JDict
 
           end
 
-        # end-of-element node
+          # end-of-element node
         when XML::Reader::TYPE_END_ELEMENT
           case reader.name
 
@@ -215,7 +199,7 @@ module JDict
             glosses = {}
             parts_of_speech = []
 
-          # we're at the end of the entry element, so index it
+            # we're at the end of the entry element, so index it
           when JDict::JMDictConstants::Elements::ENTRY
             raise "No kana found for this entry!" if kana.empty?
             
@@ -228,7 +212,7 @@ module JDict
             kanji, kana, senses = [], [], []
 
             #debug
-            if $DEBUG
+            if JDict.configuration.debug
               break if @ferret_index.size >= NUM_ENTRIES_TO_INDEX
               # if @ferret_index.size.modulo(1000) == 0
               if @ferret_index.size.modulo(100) == 0

@@ -1,4 +1,3 @@
-require 'jmdict'
 require 'configuration'
 
 module JDict
