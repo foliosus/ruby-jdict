@@ -12,7 +12,8 @@ Gem::Specification.new do |s|
   s.platform     = Gem::Platform::RUBY
   s.files        = Dir.glob("{examples,lib,spec}/**/*") + %w[LICENSING README Rakefile README.rdoc]
 
-  s.add_dependency              'ferret', '~>0.11.8.6'
+  # s.add_dependency              'ferret', '~>0.11.8.6'
+  s.add_dependency              'amalgalite', '~>1.5.0'
   s.add_dependency              'psych', '~>2.0.15'
   s.add_dependency              'libxml-ruby', '~> 2.8.0'
   s.add_development_dependency  'rspec',       '~> 3.4.0'
