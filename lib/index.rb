@@ -73,7 +73,7 @@ module JDict
     end
     
     # Returns the search results as an array of +Entry+
-    def search(term, language=LANGUAGE_DEFAULT)
+    def search(term, language=LANGUAGE_DEFAULT, exact=false)
       raise "Index not found at path #{@path}" unless File.exists? @path
       
       # no results yet...
@@ -86,7 +86,8 @@ module JDict
       #   kana ... up to 10 fields
       #   sense... up to 10 fields
       # query = 'kanji OR ' + (0..10).map { |x| "kana_#{x} OR sense_#{x}" }.join(' OR ') + ":\"#{term}\""
-      query = "{kanji kana senses} :\"#{term}\""
+      query = "{kanji kana senses} : \"#{term}\""
+      query += "*" unless exact
 
       p query
 
