@@ -4,6 +4,7 @@ require 'bundler/setup' #load up the bundled environment
 
 require 'amalgalite'
 require 'libxml'    #XML parsing
+require 'fileutils'
 
 require_relative 'constants' #XML constants from the dictionary file
 
@@ -42,16 +43,15 @@ module JDict
       @path = index_path
       @dictionary_path = dictionary_path
 
-      #check if the index has already been built before Ferret creates it
-      already_built = built?
-      
-      #create the (unbuilt) index
-      # @ferret_index = Index::Index.new(:path     => @path,
-      #                                  :analyzer => analyzer,
-      #                                  :create   => create_index)
+      # create path if nonexistent
+      FileUtils.mkdir_p(@path)
+
       @index = Amalgalite::Database.new(@path + "/fts5.db")
 
       create_schema
+
+      #check if the index has already been built before Ferret creates it
+      already_built = built?
 
       #build the index right now if "lazy loading" isn't on and the index is empty
       build  unless lazy_loading or already_built
@@ -128,7 +128,7 @@ module JDict
       results.sort { |x, y| y[0] <=> x[0] }.map { |x| x[1] }
     end
     
-    def built?; File.exists? @path; end
+    def built?; @index.first_value_from( "SELECT count(*) from search" ) != 0; end
     
     # build the full-text search index
     #   overwrite: force a build even if the index path already exists
@@ -235,7 +235,6 @@ module JDict
                 ':kana' => kana.join(", "),
                 ':senses' => sense_strings.join("%%")
               }
-              p sense_strings.join("%%")
 
               db_transaction.prepare("INSERT INTO search( kanji, kana, senses ) VALUES( :kanji, :kana, :senses );") do |stmt|
                 stmt.execute( insert_data )
