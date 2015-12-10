@@ -6,13 +6,13 @@ module JDict
     def begin_index
     end
 
-    def end_index
+    def end_index(index)
     end
     
-    def add_entry(entry)
+    def add_entry(index, entry)
     end
     
-    def search_entries(query)
+    def search(query)
     end
 
     def size

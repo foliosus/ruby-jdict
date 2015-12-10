@@ -1,6 +1,5 @@
-
 module JDict
-  class AmalgaliteIndex
+  class AmalgaliteIndex < Index
     def initialize(path)
       @index = Amalgalite::Database.new(path + "/fts5.db")
 
@@ -18,10 +17,12 @@ module JDict
     end
 
     def begin_index
-      yield db.transaction
+      puts "===START==="
+      @index.transaction
     end
 
-    def end_index
+    def end_index(i)
+      puts "===END==="
     end
     
     def add_entry(index, entry)
@@ -29,6 +30,7 @@ module JDict
         ':kanji'   => entry.kanji,
         ':kana' => entry.kana
       }
+      p insert_data
 
       index.prepare("INSERT INTO search( kanji, kana ) VALUES( :kanji, :kana );") do |stmt|
         stmt.execute( insert_data )

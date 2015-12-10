@@ -47,6 +47,22 @@ module JDict
       self.new(kanji, kana, senses)
     end
 
+    def self.from_sql(row)
+      kanji = row["kanji"]
+      kana = row["kana"].split(", ")
+      senses = []
+      row["senses"].split("%%").sort.each do |txt|
+          ary = txt.scan(PART_OF_SPEECH_RE)
+          senses << if ary.size == 1
+          parts_of_speech = ary[0][0].split('$')
+          Sense.new(parts_of_speech, txt[(ary.to_s.length-1)..-1].strip.split('**')) # ** is the sentinel sequence
+        else
+          Sense.new(nil, txt[5..-1].strip.split('**')) # ** is the sentinel sequence
+        end
+      end
+      self.new(kanji, kana, senses)
+    end
+
     # Generate a +Ferret::Document+ to add to the +Ferrex::Index+
     #   index << e.to_index_doc
     def to_index_doc

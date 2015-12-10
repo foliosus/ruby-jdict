@@ -2,16 +2,15 @@ GEM
   remote: https://rubygems.org/
   specs:
     ZenTest (4.11.0)
+    amalgalite (1.5.0)
+      arrayfields (~> 4.9)
+    arrayfields (4.9.2)
     autotest (4.4.6)
       ZenTest (>= 4.4.1)
-    builder (3.2.2)
     diff-lcs (1.2.5)
     ferret (0.11.8.6)
     libxml-ruby (2.8.0)
-    pr_geohash (1.0.0)
     psych (2.0.15)
-    rsolr (1.0.13)
-      builder (>= 2.1.2)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -25,20 +24,17 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.4.0)
     rspec-support (3.4.1)
-    sunspot (2.2.2)
-      pr_geohash (~> 1.0)
-      rsolr (~> 1.0.7)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  amalgalite (~> 1.5.0)
   autotest
   ferret (~> 0.11.8.6)
   libxml-ruby
   psych (~> 2.0.15)
   rspec (= 3.4.0)
-  sunspot
 
 BUNDLED WITH
    1.10.6
