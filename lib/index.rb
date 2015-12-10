@@ -2,6 +2,7 @@
 require 'rubygems'      #use gems
 require 'bundler/setup' #load up the bundled environment
 
+require 'amalgalite'
 require 'ferret'    #lib - full-text search indexing 
 require 'libxml'    #XML parsing
 
@@ -11,12 +12,9 @@ require_relative 'entry'     #dictionary elements
 require_relative 'kanji'     #...
 require_relative 'kana'      #...
 
-include  Ferret
-include  LibXML
+require_relative 'ferret_index'
 
-# Ensure that Ferret is unicode friendly
-# TODO: make sure en_US.UTF-8 is the correct constant
-Ferret.locale = "en_US.UTF-8"
+include  LibXML
 
 module JDict
   class DictIndex
@@ -45,25 +43,23 @@ module JDict
       @path = index_path
       @dictionary_path = dictionary_path
 
-      #analyzer
-      analyzer    = Analysis::PerFieldAnalyzer.new(Analysis::StandardAnalyzer.new)
-      re_analyzer = Analysis::RegExpAnalyzer.new(/./, false)
-      (0..10).map { |x| analyzer["kana_#{x}".intern] = re_analyzer }
-      analyzer[:kanji] = re_analyzer
-
-      #should we build the index?
-      create_index = false
-
       #check if the index has already been built before Ferret creates it
       already_built = built?
       
       #create the (unbuilt) index
-      @ferret_index = Index::Index.new(:path     => @path,
-                                       :analyzer => analyzer,
-                                       :create   => create_index)
+      # @ferret_index = Index::Index.new(:path     => @path,
+      #                                  :analyzer => analyzer,
+      #                                  :create   => create_index)
+      @index = JDict::FerretIndex.new(@path)
+
+      create_schema
 
       #build the index right now if "lazy loading" isn't on and the index is empty
       build unless lazy_loading or already_built
+    end
+
+    def create_schema
+      
     end
     
     # Returns the search results as an array of +Entry+
@@ -145,93 +141,96 @@ module JDict
       glosses = {}
       parts_of_speech = []
       
+      @index.begin_index do |i|
 
-      # read until the end
-      while reader.read
-        
-        # check what type of node we're currently on
-        case reader.node_type
+        # read until the end
+        while reader.read
 
-          # start-of-element node
-        when XML::Reader::TYPE_ELEMENT
-          case reader.name
-          when JDict::JMDictConstants::Elements::SEQUENCE
-            entry_sequence_num = reader.next_text
+          # check what type of node we're currently on
+          case reader.node_type
 
-            # TODO: Raise an exception if reader.next_text.empty? inside the when's
-            #       JMdict shouldn't have any empty elements, I believe.
-          when JDict::JMDictConstants::Elements::KANJI
-            text = reader.next_text
-            kanji << text unless text.empty?
+            # start-of-element node
+          when XML::Reader::TYPE_ELEMENT
+            case reader.name
+            when JDict::JMDictConstants::Elements::SEQUENCE
+              entry_sequence_num = reader.next_text
 
-          when JDict::JMDictConstants::Elements::KANA
-            text = reader.next_text
-            kana << text unless text.empty?
+              # TODO: Raise an exception if reader.next_text.empty? inside the when's
+              #       JMdict shouldn't have any empty elements, I believe.
+            when JDict::JMDictConstants::Elements::KANJI
+              text = reader.next_text
+              kanji << text unless text.empty?
 
-          when JDict::JMDictConstants::Elements::GLOSS
-            language = reader[JDict::JMDictConstants::Attributes::LANGUAGE] || LANGUAGE_DEFAULT
-            language = language.intern
-            text = reader.next_text
-            unless text.empty?
-              (glosses[language] ||= []) << text
+            when JDict::JMDictConstants::Elements::KANA
+              text = reader.next_text
+              kana << text unless text.empty?
+
+            when JDict::JMDictConstants::Elements::GLOSS
+              language = reader[JDict::JMDictConstants::Attributes::LANGUAGE] || LANGUAGE_DEFAULT
+              language = language.intern
+              text = reader.next_text
+              unless text.empty?
+                (glosses[language] ||= []) << text
+              end
+
+            when JDict::JMDictConstants::Elements::PART_OF_SPEECH
+              text = reader.next_text
+              parts_of_speech << text unless text.empty?
+
+            when JDict::JMDictConstants::Elements::CROSSREFERENCE
+              text = reader.next_text
+
             end
 
-          when JDict::JMDictConstants::Elements::PART_OF_SPEECH
-            text = reader.next_text
-            parts_of_speech << text unless text.empty?
+            # end-of-element node
+          when XML::Reader::TYPE_END_ELEMENT
+            case reader.name
 
-          when JDict::JMDictConstants::Elements::CROSSREFERENCE
-            text = reader.next_text
+            when JDict::JMDictConstants::Elements::SENSE
+              # build sense
+              senses << Sense.new(parts_of_speech, glosses)
+              # glosses.each do |language, texts|
+              #   senses << Sense.new(parts_of_speech,
+              #                       texts.join(', ').strip,
+              #                       language)
+              # end
 
-          end
+              # clear data for the next sense
+              glosses = {}
+              parts_of_speech = []
 
-          # end-of-element node
-        when XML::Reader::TYPE_END_ELEMENT
-          case reader.name
+              # we're at the end of the entry element, so index it
+            when JDict::JMDictConstants::Elements::ENTRY
+              raise "No kana found for this entry!" if kana.empty?
 
-          when JDict::JMDictConstants::Elements::SENSE
-            # build sense
-            senses << Sense.new(parts_of_speech, glosses)
-            # glosses.each do |language, texts|
-            #   senses << Sense.new(parts_of_speech,
-            #                       texts.join(', ').strip,
-            #                       language)
-            # end
-            
-            # clear data for the next sense
-            glosses = {}
-            parts_of_speech = []
+              #index
+              # @index << Entry.new(kanji, kana, senses).to_index_doc
+              @index.add_entry(i, Entry.new(kanji, kana, senses))
 
-            # we're at the end of the entry element, so index it
-          when JDict::JMDictConstants::Elements::ENTRY
-            raise "No kana found for this entry!" if kana.empty?
-            
-            #index
-            @ferret_index << Entry.new(kanji, kana, senses).to_index_doc
-            
-            # TODO: add entry_sequence_num to the entry
+              # TODO: add entry_sequence_num to the entry
 
-            # clear data for the next entry
-            kanji, kana, senses = [], [], []
+              # clear data for the next entry
+              kanji, kana, senses = [], [], []
 
-            #debug
-            if JDict.configuration.debug
-              break if @ferret_index.size >= NUM_ENTRIES_TO_INDEX
-              # if @ferret_index.size.modulo(1000) == 0
-              if @ferret_index.size.modulo(100) == 0
-                # puts "#{@ferret_index.size/1000} thousand"
-                puts "\r#{@ferret_index.size/100} hundred"
+              #debug
+              if JDict.configuration.debug
+                break if @index.size >= NUM_ENTRIES_TO_INDEX
+                # if @index.size.modulo(1000) == 0
+                if @index.size.modulo(100) == 0
+                  # puts "#{@index.size/1000} thousand"
+                  puts "\r#{@index.size/100} hundred"
+                end
               end
             end
           end
         end
       end
 
-      puts "#{@ferret_index.size} entries indexed"
+      puts "#{@index.size} entries indexed"
 
       # Done reading & indexing
       reader.close
-      # @ferret_index.close
+      # @index.close
     end
     def rebuild
       raise "Index already exists at path #{@path}" if File.exists? @path
@@ -253,8 +252,8 @@ module JDict
     def next_entity
       # read until an entity node
       while (self.node_type != XML::Reader::TYPE_ENTITY and
-             self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
-             self.read); end
+        self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
+        self.read); end
       self.value
     end
   end
