@@ -3,7 +3,6 @@ require 'rubygems'      #use gems
 require 'bundler/setup' #load up the bundled environment
 
 require 'amalgalite'
-require 'ferret'    #lib - full-text search indexing 
 require 'libxml'    #XML parsing
 
 require_relative 'constants' #XML constants from the dictionary file
@@ -55,7 +54,7 @@ module JDict
       create_schema
 
       #build the index right now if "lazy loading" isn't on and the index is empty
-      build # unless lazy_loading or already_built
+      build  unless lazy_loading or already_built
     end
 
     def create_schema
