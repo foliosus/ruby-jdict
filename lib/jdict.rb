@@ -1,4 +1,5 @@
 require 'configuration'
+require 'dictionaries/jmdict'
 
 module JDict
   class << self

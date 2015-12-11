@@ -1,10 +1,3 @@
-BASE_PATH   = File.dirname(__FILE__) + '/..'
-INDEX_PATH  = BASE_PATH + '/test_index'
-JMDICT_PATH = BASE_PATH + '/dictionaries/JMdict'
-
-require BASE_PATH + '/lib/constants'
-require BASE_PATH + '/lib/sense'
-
 #include Constants #XML constants from the dictionary file
 
 # Entries consist of kanji elements, kana elements, 
@@ -24,65 +17,55 @@ module JDict
     SENSE_RE = /^sense/
     PART_OF_SPEECH_RE = /^\[\[([^\]]+)\]\]\s+/
 
-    # Load an +Entry+ from the +Ferret::Document+
-    #   entry = Entry.from_index_doc(index[docid].load)
-    def self.from_index_doc(doc)
-      kanji = doc[:kanji]
-      kana, senses = [], []
-      doc.keys.map { |x| x.to_s }.sort.each do |key|
-        txt = doc[key]
-        case key
-        when SENSE_RE
-          ary = txt.scan(PART_OF_SPEECH_RE)
-          senses << if ary.size == 1
-            parts_of_speech = ary[0][0].split('$')
-            Sense.new(parts_of_speech, txt[(ary.to_s.length-1)..-1].strip.split('**')) # ** is the sentinel sequence
-          else
-            Sense.new(nil, txt[5..-1].strip.split('**')) # ** is the sentinel sequence
-          end
-        when KANA_RE
-          kana << txt.strip
-        end
-      end
-      self.new(kanji, kana, senses)
-    end
+    MEANING_SENTINEL = '**'
+    PART_OF_SPEECH_SENTINEL = '$$'
+    SENSE_SENTINEL = '%%'
+    LANGUAGE_SENTINEL = '&&'
+    GLOSS_SENTINEL = '@@'
 
     def self.from_sql(row)
       kanji = row["kanji"]
       kana = row["kana"].split(", ")
       senses = []
-      row["senses"].split("%%").sort.each do |txt|
-          ary = txt.scan(PART_OF_SPEECH_RE)
-          senses << if ary.size == 1
-          parts_of_speech = ary[0][0].split('$')
-          Sense.new(parts_of_speech, txt[(ary.to_s.length-1)..-1].strip.split('**')) # ** is the sentinel sequence
+      row["senses"].split(SENSE_SENTINEL).sort.each do |txt|
+        ary = txt.scan(PART_OF_SPEECH_RE)
+        if ary.size == 1
+          parts_of_speech = ary[0][0].split(PART_OF_SPEECH_SENTINEL)
+          gloss_strings = txt[(ary.to_s.length-1)..-1]
         else
-          Sense.new(nil, txt[5..-1].strip.split('**')) # ** is the sentinel sequence
+          parts_of_speech = nil
+          gloss_strings = txt[5..-1]
         end
+
+        gloss_strings = gloss_strings.force_encoding("UTF-8").strip.split(GLOSS_SENTINEL)
+
+        glosses = {}
+        gloss_strings.each do |str|
+          lang, meaning_string = str.split(LANGUAGE_SENTINEL)
+          lang = lang.to_sym
+          meanings = meaning_string.split(MEANING_SENTINEL)
+          (glosses[lang] ||= []) << meanings
+        end
+        glosses_for_lang = glosses[JDict.configuration.language] || glosses[JDict::JMDictConstants::Languages::ENGLISH]
+        senses << Sense.new(parts_of_speech, glosses_for_lang) # ** is the sentinel sequence
       end
       self.new(kanji, kana, senses)
     end
 
-    # Generate a +Ferret::Document+ to add to the +Ferrex::Index+
-    #   index << e.to_index_doc
-    def to_index_doc
-      # kanji
-      doc = { :kanji => kanji }
-      
-      # kana
-      kana.each_with_index { |k, i| doc["kana_#{i}".intern] = k }
-      
-      # senses
-      senses.each_with_index do |s, i| 
+    def to_sql
+      sense_strings = senses.map do |s|
         sense = ''
-        sense << "[[#{s.parts_of_speech.join("$")}]] " if s.parts_of_speech
-        # TODO: add support for other languages than English
-        sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JDict.configuration.language }.compact.join
-        
-        doc["sense_#{i}".intern] = sense
+        sense << "[[#{s.parts_of_speech.join(PART_OF_SPEECH_SENTINEL)}]] " if s.parts_of_speech
+        sense << s.glosses.collect { |lang, texts| lang.to_s + LANGUAGE_SENTINEL + texts.join(MEANING_SENTINEL) }.compact.join(GLOSS_SENTINEL)
       end
-      
-      doc
+
+      insert_data  = {
+        ':kanji'   => kanji.join(", "),
+        ':kana' => kana.join(", "),
+        ':senses' => sense_strings.join(SENSE_SENTINEL)
+      }
+
+      return insert_data
     end
     
     # Get an array of +Senses+ for the specified language

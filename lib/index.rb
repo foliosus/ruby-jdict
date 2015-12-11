@@ -11,6 +11,7 @@ require_relative 'constants' #XML constants from the dictionary file
 require_relative 'entry'     #dictionary elements
 require_relative 'kanji'     #...
 require_relative 'kana'      #...
+require_relative 'sense'
 
 require 'amalgalite'
 
@@ -46,7 +47,7 @@ module JDict
       # create path if nonexistent
       FileUtils.mkdir_p(@path)
 
-      @index = Amalgalite::Database.new(@path + "/fts5.db")
+      @index = Amalgalite::Database.new(File.join(@path, "fts5.db"))
 
       create_schema
 
@@ -54,7 +55,7 @@ module JDict
       already_built = built?
 
       #build the index right now if "lazy loading" isn't on and the index is empty
-      build  unless lazy_loading or already_built
+      build unless lazy_loading or (already_built && !JDict.configuration.debug)
     end
 
     def create_schema
@@ -89,9 +90,10 @@ module JDict
       query = "{kanji kana senses} : \"#{term}\""
       query += "*" unless exact
 
-      @index.execute("SELECT kanji, kana, senses FROM search WHERE search MATCH '#{query}' LIMIT #{JDict.configuration.num_results}") do |row|
+      @index.execute("SELECT kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH '#{query}' LIMIT #{JDict.configuration.num_results}") do |row|
         entry = Entry.from_sql(row)
         score = 0.0
+
         # load entry from the index. from cache, if it's available
         # load from cache if it's available
         # if entry = @entries_cache[docid]
@@ -116,7 +118,7 @@ module JDict
         #   s.glosses.each { |g| is_exact_match = is_exact_match || g.force_encoding("UTF-8").match(re) }
         # end
         
-        score = 1.0 if is_exact_match
+        # score = 1.0 if is_exact_match
         
         # add the result
         results << [score, entry]
@@ -221,19 +223,7 @@ module JDict
 
               #index
               # @index.add_entry(i, Entry.new(kanji, kana, senses))
-
-              sense_strings = senses.map do |s|
-                sense = ''
-                sense << "[[#{s.parts_of_speech.join("$")}]] " if s.parts_of_speech
-                # TODO: add support for other languages than English
-        sense << s.glosses.collect { |lang, texts| texts.join('**') if lang == JDict.configuration.language }.compact.join
-              end
-
-              insert_data  = {
-                ':kanji'   => kanji.join(", "),
-                ':kana' => kana.join(", "),
-                ':senses' => sense_strings.join("%%")
-              }
+              insert_data = Entry.new(kanji, kana, senses).to_sql
 
               db_transaction.prepare("INSERT INTO search( kanji, kana, senses ) VALUES( :kanji, :kana, :senses );") do |stmt|
                 stmt.execute( insert_data )
