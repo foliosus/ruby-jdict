@@ -44,12 +44,6 @@ module JDict
       CROSSREFERENCE = 'xref'
     end
     
-    # XML attributes of the JMDict file
-    module Attributes
-      # Attribute specificying the gloss language
-      LANGUAGE       = 'xml:lang'
-    end
-    
     # Constants for selecting the search language.   
     # Used in the "gloss" element's xml:lang attribute.
     #   :eng never appears as a xml:lang constant because gloss is assumed to be English when not specified

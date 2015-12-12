@@ -38,6 +38,10 @@ module JDict
       results = @index.search(phrase)
     end
 
+    def get_pos(pos)
+      @index.get_pos(pos)
+    end
+
     private
 
     def load_index

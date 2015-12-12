@@ -22,6 +22,7 @@ module JDict
     
     LANGUAGE_DEFAULT = JDict::JMDictConstants::Languages::ENGLISH
     NUM_ENTRIES_TO_INDEX = 50
+    ENTITY_REGEX = /<!ENTITY\s([^ ]*)\s\"(.*)">/
     
     attr_reader :path
     # Initialize a full-text search index backend for JMdict,
@@ -43,11 +44,15 @@ module JDict
 
       @path = index_path
       @dictionary_path = dictionary_path
+      @pos_hash = {}
 
       # create path if nonexistent
       FileUtils.mkdir_p(@path)
+      db_file = File.join(@path, "fts5.db")
 
-      @index = Amalgalite::Database.new(File.join(@path, "fts5.db"))
+      File.unlink(db_file) if JDict.configuration.debug && File.exist?(db_file)
+
+      @index = Amalgalite::Database.new(db_file)
 
       create_schema
 
@@ -56,6 +61,9 @@ module JDict
 
       #build the index right now if "lazy loading" isn't on and the index is empty
       build unless lazy_loading or (already_built && !JDict.configuration.debug)
+
+      #make the hash from abbreviated parts of speech to full definitions
+      build_pos_hash
     end
 
     def create_schema
@@ -139,15 +147,9 @@ module JDict
       raise "No dictionary path was provided" if @dictionary_path.nil?
       raise "Dictionary not found at path #{@dictionary_path}" unless File.exists?(@dictionary_path)
       
-      # open reader
-      reader = nil
-      Dir.chdir(Dir.pwd) do
-        jmdict_path = File.join(@dictionary_path)
-        reader = XML::Reader.file(jmdict_path, :encoding => XML::Encoding::UTF_8, :options => XML::Parser::Options::NOENT) # create a reader for JMdict
-        raise "Failed to create XML::Reader for #{@dictionary_path}!" if reader.nil?
-      end
+      reader = open_reader(@dictionary_path)
 
-      puts "building index..."
+      puts "Building index..."
 
       # whenever there is a reader error, print its block parameters
       XML::Error.set_handler { |*args| p args }
@@ -166,7 +168,7 @@ module JDict
 
           # check what type of node we're currently on
           case reader.node_type
-
+            
             # start-of-element node
           when XML::Reader::TYPE_ELEMENT
             case reader.name
@@ -184,20 +186,23 @@ module JDict
               kana << text unless text.empty?
 
             when JDict::JMDictConstants::Elements::GLOSS
-              language = reader[JDict::JMDictConstants::Attributes::LANGUAGE] || LANGUAGE_DEFAULT
+              language = reader.node.lang || LANGUAGE_DEFAULT
               language = language.intern
               text = reader.next_text
               unless text.empty?
                 (glosses[language] ||= []) << text
               end
 
-            when JDict::JMDictConstants::Elements::PART_OF_SPEECH
-              text = reader.next_text
-              parts_of_speech << text unless text.empty?
-
             when JDict::JMDictConstants::Elements::CROSSREFERENCE
               text = reader.next_text
+            end
 
+            # XML entity references are treated as a different node type
+            # the parent node of the entity reference itself has the actual tag name
+          when XML::Reader::TYPE_ENTITY_REFERENCE
+            if reader.node.parent.name == JDict::JMDictConstants::Elements::PART_OF_SPEECH
+                text = reader.name
+                parts_of_speech << text unless text.empty?
             end
 
             # end-of-element node
@@ -238,11 +243,11 @@ module JDict
               #debug
               if JDict.configuration.debug
                 break if entries_added >= NUM_ENTRIES_TO_INDEX
-              #   # if @index.size.modulo(1000) == 0
-              #   if @index.size.modulo(100) == 0
-              #     # puts "#{@index.size/1000} thousand"
-              #     puts "\r#{@index.size/100} hundred"
-              #   end
+                #   # if @index.size.modulo(1000) == 0
+                #   if @index.size.modulo(100) == 0
+                #     # puts "#{@index.size/1000} thousand"
+                #     puts "\r#{@index.size/100} hundred"
+                #   end
               end
             end
           end
@@ -255,9 +260,60 @@ module JDict
       reader.close
       # @index.close
     end
+
     def rebuild
       raise "Index already exists at path #{@path}" if File.exists? @path
       build
+    end
+
+    def open_reader(dictionary_path)
+      # open reader
+      reader = nil
+      Dir.chdir(Dir.pwd) do
+        jmdict_path = File.join(dictionary_path)
+        reader = XML::Reader.file(jmdict_path, :encoding => XML::Encoding::UTF_8) # create a reader for JMdict
+        raise "Failed to create XML::Reader for #{dictionary_path}!" if reader.nil?
+      end
+      reader
+    end
+    
+    def build_pos_hash
+      @pos_hash ||= begin
+        pos_hash = {}
+        reader = open_reader(@dictionary_path)
+        done = false
+        while done == false
+            reader.read
+            case reader.node_type
+            when XML::Reader::TYPE_DOCUMENT_TYPE
+                # random segfault when attempting this
+                # cs.each do |child|
+                #   p child.to_s
+                # end
+                doctype_string = reader.node.to_s
+                entities = doctype_string.scan(ENTITY_REGEX)
+                entities.map do |entity|
+                  abbrev = entity[0]
+                  full = entity[1]
+                  sym = pos_to_sym(abbrev)
+                  pos_hash[sym] = full
+                end
+                done = true
+            when XML::Reader::TYPE_ELEMENT
+                done = true
+            end
+        end
+        pos_hash
+      end
+    end
+
+    def pos_to_sym(entity)
+      entity.gsub('-', '_').to_sym
+    end
+
+    def get_pos(pos)
+      build_pos_hash if @pos_hash.empty?
+      @pos_hash[pos_to_sym(pos)]
     end
   end
 
