@@ -12,6 +12,7 @@ JDict.configure do |config|
   config.num_results        = 50                                         # maximum results to return from searching
 end
 
+# make sure that the dictionary file "JMDict" is in DICT_PATH before initializing.
 dict = JDict::JMDict.new
 
 query = "日本語"
