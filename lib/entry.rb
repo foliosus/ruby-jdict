@@ -25,8 +25,8 @@ module JDict
 
     # Converts an SQLite row from the index to the Entry format
     def self.from_sql(row)
-      kanji = row["kanji"]
-      kana = row["kana"].split(", ")
+      kanji = row["kanji"].split(", ").map { |k| k = k.force_encoding("UTF-8") }
+      kana = row["kana"].split(", ").map { |k| k = k.force_encoding("UTF-8") }
       senses = []
       row["senses"].split(SENSE_SENTINEL).sort.each do |txt|
         ary = txt.scan(PART_OF_SPEECH_RE)
