@@ -8,3 +8,6 @@ Dictionary files are located [here](http://www.csse.monash.edu.au/~jwb/wwwjdicin
 ```
 gem install ruby-jdict
 ```
+
+## Usage
+See [this](https://github.com/Ruin0x11/ruby-jdict/blob/master/examples/query.rb) example for basic usage.
