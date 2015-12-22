@@ -25,19 +25,26 @@ module JDict
     def size
       @entries.size
     end
+
     def loaded?
       @index.built?
     end
 
-    def search(phrase)
+    # Search this dictionary's index for the given string.
+    # @param query [String] the search query
+    # @return [Array(Entry)] the results of the search
+    def search(query)
       results = []
-      return results if phrase.empty?
+      return results if query.empty?
 
       load_index if lazy_index_loading and not loaded?
 
-      results = @index.search(phrase)
+      results = @index.search(query)
     end
 
+    # Retrieves the definition of a part-of-speech from its abbreviation
+    # @param pos [String] the abbreviation for the part-of-speech
+    # @return [String] the full description of the part-of-speech
     def get_pos(pos)
       @index.get_pos(pos)
     end

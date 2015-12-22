@@ -23,6 +23,7 @@ module JDict
     LANGUAGE_SENTINEL = '&&'
     GLOSS_SENTINEL = '@@'
 
+    # Converts an SQLite row from the index to the Entry format
     def self.from_sql(row)
       kanji = row["kanji"]
       kana = row["kana"].split(", ")
@@ -52,6 +53,8 @@ module JDict
       self.new(kanji, kana, senses)
     end
 
+    # Converts an Entry to a string to be indexed into the SQLite database
+    # @return [String] the serialized string for this Entry
     def to_sql
       sense_strings = senses.map do |s|
         sense = ''
@@ -69,7 +72,6 @@ module JDict
     end
     
     # Get an array of +Senses+ for the specified language
-    #   senses = Entry.senses(:en)
     def senses_by_language(l)
       senses.select { |s| s.language == l }
     end

@@ -25,15 +25,10 @@ module JDict
     ENTITY_REGEX = /<!ENTITY\s([^ ]*)\s\"(.*)">/
     
     attr_reader :path
-    # Initialize a full-text search index backend for JMdict,
-    # using the "Ferret" lib
-    #
-    # index_path      <= desired filesystem path where you'd like
-    #                    the *search index* stored
-    # dictionary_path <= desired filesystem path where you'd like
-    #                    the *dictionary* stored
-    # lazy_loading    <= lazily load the index just when it's needed,
-    #                    instead of building it ahead of time
+    # Initialize a full-text search index backend for JMdict
+    # @param index_path [String] desired filesystem path where you'd like the *search index* stored
+    # @param dictionary_path [String] desired filesystem path where you'd like the *dictionary* stored
+    # @param lazy_loading [Boolean] lazily load the index just when it's needed, instead of building it ahead of time
     def initialize(index_path, dictionary_path=nil, lazy_loading=JDict.configuration.lazy_index_loading)
       raise "Index path was nil" if index_path.nil?
 
@@ -66,10 +61,10 @@ module JDict
       build_pos_hash
     end
 
+    # Creates the SQL schema for the Amalgalite database
     def create_schema
       schema = @index.schema
       unless schema.tables['search']
-        puts "Create schema"
         @index.execute_batch <<-SQL
         CREATE VIRTUAL TABLE search USING fts5(
             kanji,
@@ -82,6 +77,9 @@ module JDict
     end
     
     # Returns the search results as an array of +Entry+
+    # @param term [String] the search string
+    # @param language [Symbol] the language to return results in
+    # @return [Array(Entry)] the results of the search
     def search(term, language=LANGUAGE_DEFAULT, exact=false)
       raise "Index not found at path #{@path}" unless File.exists? @path
       
@@ -115,8 +113,6 @@ module JDict
         #   @entries_cache[docid] = entry
         # end
         
-        # TODO: ferret seems to have problems giving realistic scores for Unicode terms, 
-        # so let's help it.
         is_exact_match = false
         is_exact_match = entry.kanji == term ||
           entry.kana.any? { |k| k == term }
@@ -139,9 +135,10 @@ module JDict
     
     def built?; @index.first_value_from( "SELECT count(*) from search" ) != 0; end
     
-    # build the full-text search index
-    #   overwrite: force a build even if the index path already exists
-    #   returns the number of indexed entries
+    # Builds the full-text search index
+    # @param overwrite [Boolean] force a build even if the index path already exists
+    # @param dictionary_path [String] path to the dictionary file
+    # @return [Integer] the number of indexed entries
     def build(overwrite=false, dictionary_path=nil)
       @dictionary_path = dictionary_path unless dictionary_path.nil?
       raise "No dictionary path was provided" if @dictionary_path.nil?
@@ -266,6 +263,9 @@ module JDict
       build
     end
 
+    # Creates an XML::Reader object for the given path
+    # @param dictionary_path [String] path to the dictionary file
+    # @return [XML::Reader] the reader for the given dictionary
     def open_reader(dictionary_path)
       # open reader
       reader = nil
@@ -277,6 +277,7 @@ module JDict
       reader
     end
     
+    # Creates the hash of part-of-speech symbols to full definitions from the dictionary
     def build_pos_hash
       @pos_hash ||= begin
         pos_hash = {}
@@ -307,10 +308,16 @@ module JDict
       end
     end
 
+    # Converts a part-of-speech entity reference string into a symbol
+    # @param entity [String] the entity reference string
+    # @return [Symbol] the part-of-speech symbol
     def pos_to_sym(entity)
       entity.gsub('-', '_').to_sym
     end
 
+    # Retrieves the definition of a part-of-speech from its abbreviation
+    # @param pos [String] the abbreviation for the part-of-speech
+    # @return [String] the full description of the part-of-speech
     def get_pos(pos)
       build_pos_hash if @pos_hash.empty?
       @pos_hash[pos_to_sym(pos)]
