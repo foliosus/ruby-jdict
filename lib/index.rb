@@ -88,11 +88,16 @@ module JDict
 
       @entries_cache = []
       
+      # convert full-width katakana to hiragana
+      # TODO: convert half-width katakana to hiragana
+      term.tr!('ァ-ン','ぁ-ん')
+      
       # search for:
       #   kanji... one field
       #   kana ... up to 10 fields
       #   sense... up to 10 fields
       # query = 'kanji OR ' + (0..10).map { |x| "kana_#{x} OR sense_#{x}" }.join(' OR ') + ":\"#{term}\""
+
       query = "{kanji kana senses} : \"#{term}\""
       query += "*" unless exact
 
@@ -116,13 +121,6 @@ module JDict
         is_exact_match = false
         is_exact_match = entry.kanji == term ||
           entry.kana.any? { |k| k == term }
-        
-        re = Regexp.new("#{term}", Regexp::IGNORECASE) # match the search term, ignoring case
-        # entry.senses.each do |s|
-        #   s.glosses.each { |g| is_exact_match = is_exact_match || g.force_encoding("UTF-8").match(re) }
-        # end
-        
-        # score = 1.0 if is_exact_match
         
         # add the result
         results << [score, entry]
