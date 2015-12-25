@@ -101,7 +101,7 @@ module JDict
       query = "{kanji kana senses} : \"#{term}\""
       query += "*" unless exact
 
-      @index.execute("SELECT kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT #{JDict.configuration.num_results}", query) do |row|
+      @index.execute("SELECT kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.configuration.num_results) do |row|
         entry = Entry.from_sql(row)
         score = 0.0
 
