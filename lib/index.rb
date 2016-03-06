@@ -99,8 +99,13 @@ module JDict
       #   sense... up to 10 fields
       # query = 'kanji OR ' + (0..10).map { |x| "kana_#{x} OR sense_#{x}" }.join(' OR ') + ":\"#{term}\""
 
-      query = "{kanji kana senses} : \"#{term}\""
-      query += "*" unless exact
+      if term.start_with?('seq:')
+        query = "sequence_number : \"#{term[4..-1]}\""
+        puts query
+      else
+        query = "{kanji kana senses} : \"#{term}\""
+        query += "*" unless exact
+      end
 
       @index.execute("SELECT sequence_number, kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.configuration.num_results) do |row|
         entry = Entry.from_sql(row)
