@@ -19,6 +19,7 @@ query = "日本語"
 
 results = dict.search(query)
 results.each do |entry|
+  puts entry.sequence_number
   puts entry.kanji.join(", ")
   puts entry.kana.join(", ")
   entry.senses.each do |sense|

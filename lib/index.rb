@@ -67,6 +67,7 @@ module JDict
       unless schema.tables['search']
         @index.execute_batch <<-SQL
         CREATE VIRTUAL TABLE search USING fts5(
+            sequence_number,
             kanji,
             kana,
             senses
@@ -101,7 +102,7 @@ module JDict
       query = "{kanji kana senses} : \"#{term}\""
       query += "*" unless exact
 
-      @index.execute("SELECT kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.configuration.num_results) do |row|
+      @index.execute("SELECT sequence_number, kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.configuration.num_results) do |row|
         entry = Entry.from_sql(row)
         score = 0.0
 
@@ -150,7 +151,7 @@ module JDict
       XML::Error.set_handler { |*args| p args }
 
       # components of an entry
-      kanji, kana, senses = [], [], []
+      entry_sequence_num, kanji, kana, senses = 0, [], [], []
       glosses = {}
       parts_of_speech = []
 
@@ -168,7 +169,7 @@ module JDict
           when XML::Reader::TYPE_ELEMENT
             case reader.name
             when JDict::JMDictConstants::Elements::SEQUENCE
-              entry_sequence_num = reader.next_text
+              entry_sequence_num = reader.next_text.to_i
 
               # TODO: Raise an exception if reader.next_text.empty? inside the when's
               #       JMdict shouldn't have any empty elements, I believe.
@@ -222,14 +223,11 @@ module JDict
               raise "No kana found for this entry!" if kana.empty?
 
               #index
-              # @index.add_entry(i, Entry.new(kanji, kana, senses))
-              insert_data = Entry.new(kanji, kana, senses).to_sql
+              insert_data = Entry.new(entry_sequence_num, kanji, kana, senses).to_sql
 
-              db_transaction.prepare("INSERT INTO search( kanji, kana, senses ) VALUES( :kanji, :kana, :senses );") do |stmt|
+              db_transaction.prepare("INSERT INTO search( sequence_number, kanji, kana, senses ) VALUES( :sequence_number, :kanji, :kana, :senses );") do |stmt|
                 stmt.execute( insert_data )
               end
-
-              # TODO: add entry_sequence_num to the entry
 
               # clear data for the next entry
               kanji, kana, senses = [], [], []

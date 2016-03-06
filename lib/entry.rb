@@ -6,11 +6,11 @@
 module JDict
   class Entry
     
-    attr_accessor :kanji, :kana, :senses
+    attr_accessor :sequence_number, :kanji, :kana, :senses
     # Create a new Entry
     #  entry = initialize(kanji, kana, senses)
-    def initialize(kanji, kana, senses)
-      @kanji, @kana, @senses = kanji, kana, senses
+    def initialize(sequence_number, kanji, kana, senses)
+      @sequence_number, @kanji, @kana, @senses = sequence_number, kanji, kana, senses
     end
 
     KANA_RE = /^kana/
@@ -25,6 +25,7 @@ module JDict
 
     # Converts an SQLite row from the index to the Entry format
     def self.from_sql(row)
+      sequence_number = row["sequence_number"].to_i
       kanji = row["kanji"].split(", ").map { |k| k = k.force_encoding("UTF-8") }
       kana = row["kana"].split(", ").map { |k| k = k.force_encoding("UTF-8") }
       senses = []
@@ -50,7 +51,7 @@ module JDict
         glosses_for_lang = glosses[JDict.configuration.language] || glosses[JDict::JMDictConstants::Languages::ENGLISH]
         senses << Sense.new(parts_of_speech, glosses_for_lang) # ** is the sentinel sequence
       end
-      self.new(kanji, kana, senses)
+      self.new(sequence_number, kanji, kana, senses)
     end
 
     # Converts an Entry to a string to be indexed into the SQLite database
@@ -62,8 +63,9 @@ module JDict
         sense << s.glosses.collect { |lang, texts| lang.to_s + LANGUAGE_SENTINEL + texts.join(MEANING_SENTINEL) }.compact.join(GLOSS_SENTINEL)
       end
 
-      insert_data  = {
-        ':kanji'   => kanji.join(", "),
+      insert_data = {
+        ':sequence_number' => sequence_number.to_s,
+        ':kanji' => kanji.join(", "),
         ':kana' => kana.join(", "),
         ':senses' => sense_strings.join(SENSE_SENTINEL)
       }
