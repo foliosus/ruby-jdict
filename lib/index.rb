@@ -81,7 +81,7 @@ module JDict
     # @param term [String] the search string
     # @param language [Symbol] the language to return results in
     # @return [Array(Entry)] the results of the search
-    def search(term, language=LANGUAGE_DEFAULT, exact=false)
+    def search(term, exact=false, language=LANGUAGE_DEFAULT)
       raise "Index not found at path #{@path}" unless File.exists? @path
       
       # no results yet...

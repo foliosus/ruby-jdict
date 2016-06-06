@@ -33,13 +33,13 @@ module JDict
     # Search this dictionary's index for the given string.
     # @param query [String] the search query
     # @return [Array(Entry)] the results of the search
-    def search(query)
+    def search(query, exact=false)
       results = []
       return results if query.empty?
 
       load_index if lazy_index_loading and not loaded?
 
-      results = @index.search(query)
+      results = @index.search(query, exact)
     end
 
     # Retrieves the definition of a part-of-speech from its abbreviation
