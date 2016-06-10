@@ -13,3 +13,8 @@ gem install ruby-jdict
 See [this](https://github.com/Ruin0x11/ruby-jdict/blob/master/examples/query.rb) example for basic usage.
 
 If the dictionary file is not found, you will be prompted to download it.
+
+## Issues
+* The code for inserting Entry objects into the database is horrible. Should create multiple tables for each datatype instead of a single table for all datatypes.
+* Some routines need to be generalized to allow for the usage of dictionaries besides JMDict (like Tatoeba or KANJIDIC).
+* Many functions are getting too large/unreadable.

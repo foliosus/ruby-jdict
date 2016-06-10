@@ -1,5 +1,6 @@
-require_relative '../dictionary.rb'
-require_relative '../downloader.rb'
+require 'jdict'
+require 'dictionary'
+require 'downloader'
 
 module JDict
   class JMDict < Dictionary
