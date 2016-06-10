@@ -12,17 +12,11 @@ end
 
 dict = JDict::JMDict.new
 
-query = "日本語"
+query = ARGV.pop.dup unless ARGV.empty?
+query ||= "日本語"
 
 results = dict.search(query)
 results.each do |entry|
-  puts entry.sequence_number
-  puts entry.kanji.join(", ")
-  puts entry.kana.join(", ")
-  entry.senses.each do |sense|
-    glosses = sense.glosses.join(", ")
-    parts_of_speech = sense.parts_of_speech.join(", ")
-    puts "(" + parts_of_speech + ") " + glosses
-  end
+  puts entry.to_s
   puts
 end

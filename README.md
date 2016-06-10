@@ -2,6 +2,8 @@
 Ruby gem for accessing Jim Breen's Japanese dictionaries. Can currently access the following:
   * JMdict (Japanese-English dictionary)
 
+*Note*: For the moment, uses SQLite (via [amalgalite](https://github.com/copiousfreetime/amalgalite)) for data storage. Not intended to be scalable.
+
 ## Install
 ```
 gem install ruby-jdict

@@ -1,11 +1,11 @@
 #include Constants #XML constants from the dictionary file
 
-# Entries consist of kanji elements, kana elements, 
-# general information and sense elements. Each entry must have at 
+# Entries consist of kanji elements, kana elements,
+# general information and sense elements. Each entry must have at
 # least one kana element and one sense element. Others are optional.
 module JDict
   class Entry
-    
+
     attr_accessor :sequence_number, :kanji, :kana, :senses
     # Create a new Entry
     #  entry = initialize(kanji, kana, senses)
@@ -60,22 +60,42 @@ module JDict
       sense_strings = senses.map do |s|
         sense = ''
         sense << "[[#{s.parts_of_speech.join(PART_OF_SPEECH_SENTINEL)}]] " if s.parts_of_speech
+
+        # FIXME: it fails when retrieving entries from an existing index, because only one language is retrieved and the 'lang' field is nil
         sense << s.glosses.collect { |lang, texts| lang.to_s + LANGUAGE_SENTINEL + texts.join(MEANING_SENTINEL) }.compact.join(GLOSS_SENTINEL)
       end
 
-      insert_data = {
-        ':sequence_number' => sequence_number.to_s,
+      { ':sequence_number' => sequence_number.to_s,
         ':kanji' => kanji.join(", "),
         ':kana' => kana.join(", "),
-        ':senses' => sense_strings.join(SENSE_SENTINEL)
-      }
-
-      return insert_data
+        ':senses' => sense_strings.join(SENSE_SENTINEL) }
     end
-    
+
     # Get an array of +Senses+ for the specified language
     def senses_by_language(l)
       senses.select { |s| s.language == l }
+    end
+
+    def to_s
+      str = ""
+      str << "#{kanji_to_s} (#{kana_to_s})\n"
+      str << "#{senses_to_s}\n"
+      str
+    end
+
+    def kanji_to_s
+      @kanji.join(', ')
+    end
+
+    def kana_to_s
+      @kana.join(', ') unless @kana.nil?
+    end
+
+    def senses_to_s(delimiter = "\n")
+      list = @senses.map.with_index(1) do |sense, i|
+        "#{i}. #{sense.to_s}"
+      end
+      list.join("\n")
     end
   end
 end
