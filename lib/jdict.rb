@@ -3,18 +3,18 @@ require 'dictionaries/jmdict'
 
 module JDict
   class << self
-    attr_accessor :configuration
+    attr_accessor :config
   end
 
-  def self.configuration
-    @configuration ||= Configuration.new
+  def self.config
+    @config ||= Configuration.new
   end
 
   def self.reset
-    @configuration = Configuration.new
+    @config = Configuration.new
   end
 
   def self.configure
-    yield(configuration)
+    yield(config)
   end
 end

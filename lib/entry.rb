@@ -48,7 +48,7 @@ module JDict
           meanings = meaning_string.split(MEANING_SENTINEL)
           (glosses[lang] ||= []) << meanings
         end
-        glosses_for_lang = glosses[JDict.configuration.language] || glosses[JDict::JMDictConstants::Languages::ENGLISH]
+        glosses_for_lang = glosses[JDict.config.language] || glosses[JDict::JMDictConstants::Languages::ENGLISH]
         senses << Sense.new(parts_of_speech, glosses_for_lang) # ** is the sentinel sequence
       end
       self.new(sequence_number, kanji, kana, senses)

@@ -70,10 +70,6 @@ describe JDict::Dictionary, "after initialization" do
   it "has no entries" do
     @dictionary.size.should == 0
   end
-  
-  it "has an empty entries cache" do
-    @dictionary.entries_cache.empty?
-  end
 end
 
 describe JDict::Dictionary, "when loading from a dictionary file" do

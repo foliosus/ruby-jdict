@@ -1,9 +1,6 @@
 # encoding: utf-8
-require 'rubygems'      #use gems
-require 'bundler/setup' #load up the bundled environment
-
 require 'amalgalite'
-require 'libxml'    #XML parsing
+require 'libxml'
 require 'fileutils'
 
 require_relative 'constants' #XML constants from the dictionary file
@@ -19,46 +16,41 @@ include LibXML
 
 module JDict
   class DictIndex
-    
+
     LANGUAGE_DEFAULT = JDict::JMDictConstants::Languages::ENGLISH
     NUM_ENTRIES_TO_INDEX = 50
     ENTITY_REGEX = /<!ENTITY\s([^ ]*)\s\"(.*)">/
-    
+
     attr_reader :path
+
     # Initialize a full-text search index backend for JMdict
     # @param index_path [String] desired filesystem path where you'd like the *search index* stored
     # @param dictionary_path [String] desired filesystem path where you'd like the *dictionary* stored
-    # @param lazy_loading [Boolean] lazily load the index just when it's needed, instead of building it ahead of time
-    def initialize(index_path, dictionary_path=nil, lazy_loading=JDict.configuration.lazy_index_loading)
-      raise "Index path was nil" if index_path.nil?
+    def initialize
+      dictionary_path = JDict.config.dictionary_path
 
-      path_specified = dictionary_path.nil? ? false : true
-      if path_specified and not File.exists? dictionary_path
-        raise "Dictionary not found at path #{dictionary_path}"
+      unless File.exists? dictionary_path
+        raise "Dictionary not found at path #{dictionary_path}. Please run the 'jdict-dl' command to download and index the dictionary."
       end
 
-      @path = index_path
+      @index_path = index_path
       @dictionary_path = dictionary_path
       @pos_hash = {}
 
       # create path if nonexistent
-      FileUtils.mkdir_p(@path)
-      db_file = File.join(@path, "fts5.db")
+      FileUtils.mkdir_p(@index_path)
+      db_file = File.join(@index_path, "fts5.db")
 
-      File.unlink(db_file) if JDict.configuration.debug && File.exist?(db_file)
+      File.unlink(db_file) if JDict.config.debug && File.exist?(db_file)
 
       @index = Amalgalite::Database.new(db_file)
 
       create_schema
 
-      #check if the index has already been built before Ferret creates it
-      already_built = built?
-
-      #build the index right now if "lazy loading" isn't on and the index is empty
-      build unless lazy_loading or (already_built && !JDict.configuration.debug)
+      build_index
 
       #make the hash from abbreviated parts of speech to full definitions
-      build_pos_hash
+      @pos_hash ||= build_pos_hash
     end
 
     # Creates the SQL schema for the Amalgalite database
@@ -76,78 +68,57 @@ module JDict
         @index.reload_schema!
       end
     end
-    
-    # Returns the search results as an array of +Entry+
-    # @param term [String] the search string
-    # @param language [Symbol] the language to return results in
-    # @return [Array(Entry)] the results of the search
-    def search(term, exact=false, language=LANGUAGE_DEFAULT)
-      raise "Index not found at path #{@path}" unless File.exists? @path
-      
-      # no results yet...
-      results = []
 
-      @entries_cache = []
-      
+    def make_query(term, exact)
       # convert full-width katakana to hiragana
       # TODO: convert half-width katakana to hiragana
       term.tr!('ァ-ン','ぁ-ん')
-      
-      # search for:
-      #   kanji... one field
-      #   kana ... up to 10 fields
-      #   sense... up to 10 fields
-      # query = 'kanji OR ' + (0..10).map { |x| "kana_#{x} OR sense_#{x}" }.join(' OR ') + ":\"#{term}\""
 
       if term.start_with?('seq:')
         query = "sequence_number : \"#{term[4..-1]}\""
-        puts query
       else
         query = "{kanji kana senses} : \"#{term}\""
         query += "*" unless exact
       end
 
-      @index.execute("SELECT sequence_number, kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.configuration.num_results) do |row|
-        entry = Entry.from_sql(row)
-        score = 0.0
+      query
+    end
 
-        # load entry from the index. from cache, if it's available
-        # load from cache if it's available
-        # if entry = @entries_cache[docid]
-        #   entry = Entry.from_index_doc(@ferret_index[docid].load)
-        #   @entries_cache[docid] = entry
-        # end        
-        
-        # # load entry from the index
-        # if entry.nil?
-        #   entry = Entry.from_index_doc(@ferret_index[docid].load)
-        #   @entries_cache[docid] = entry
-        # end
-        
-        is_exact_match = false
-        is_exact_match = entry.kanji == term ||
-          entry.kana.any? { |k| k == term }
-        
+    # Returns the search results as an array of +Entry+
+    # @param term [String] the search string
+    # @param language [Symbol] the language to return results in
+    # @return [Array(Entry)] the results of the search
+    def search(term, exact=false, language=LANGUAGE_DEFAULT)
+      raise "Index not found at path #{@index_path}" unless File.exists? @index_path
+
+      results = []
+
+      query = make_query(term, exact)
+
+      @index.execute("SELECT sequence_number, kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.config.num_results) do |row|
+        entry = Entry.from_sql(row)
+
+        is_exact_match = entry.kanji == term || entry.kana.any? { |k| k == term }
+
+        should_add = !exact || (exact && is_exact_match)
+
         # add the result
-        results << [score, entry]
+        results << [score, entry] if should_add
       end
 
-      @entries_cache = []
-      
-      results.sort { |x, y| y[0] <=> x[0] }.map { |x| x[1] }
+      # Sort the results by first column (score) and return only the second column (entry)
+      results.sort { |entry_a, entry_b| entry_a[0] <=> entry_a[0] }.map { |entry| entry[1] }
     end
-    
-    def built?; @index.first_value_from( "SELECT count(*) from search" ) != 0; end
-    
+
     # Builds the full-text search index
     # @param overwrite [Boolean] force a build even if the index path already exists
     # @param dictionary_path [String] path to the dictionary file
     # @return [Integer] the number of indexed entries
-    def build(overwrite=false, dictionary_path=nil)
+    def build_index(overwrite=false, dictionary_path=nil)
       @dictionary_path = dictionary_path unless dictionary_path.nil?
       raise "No dictionary path was provided" if @dictionary_path.nil?
       raise "Dictionary not found at path #{@dictionary_path}" unless File.exists?(@dictionary_path)
-      
+
       reader = open_reader(@dictionary_path)
 
       puts "Building index..."
@@ -161,7 +132,7 @@ module JDict
       parts_of_speech = []
 
       entries_added = 0
-      
+
       @index.transaction do |db_transaction|
 
         # read until the end
@@ -169,7 +140,7 @@ module JDict
 
           # check what type of node we're currently on
           case reader.node_type
-            
+
             # start-of-element node
           when XML::Reader::TYPE_ELEMENT
             case reader.name
@@ -202,8 +173,8 @@ module JDict
             # the parent node of the entity reference itself has the actual tag name
           when XML::Reader::TYPE_ENTITY_REFERENCE
             if reader.node.parent.name == JDict::JMDictConstants::Elements::PART_OF_SPEECH
-                text = reader.name
-                parts_of_speech << text unless text.empty?
+              text = reader.name
+              parts_of_speech << text unless text.empty?
             end
 
             # end-of-element node
@@ -238,15 +209,6 @@ module JDict
               kanji, kana, senses = [], [], []
 
               entries_added += 1
-              #debug
-              if JDict.configuration.debug
-                break if entries_added >= NUM_ENTRIES_TO_INDEX
-                #   # if @index.size.modulo(1000) == 0
-                #   if @index.size.modulo(100) == 0
-                #     # puts "#{@index.size/1000} thousand"
-                #     puts "\r#{@index.size/100} hundred"
-                #   end
-              end
             end
           end
         end
@@ -259,9 +221,9 @@ module JDict
       # @index.close
     end
 
-    def rebuild
-      raise "Index already exists at path #{@path}" if File.exists? @path
-      build
+    def rebuild_index
+      raise "Index already exists at path #{@index_path}" if File.exists? @index_path
+      build_index
     end
 
     # Creates an XML::Reader object for the given path
@@ -277,36 +239,34 @@ module JDict
       end
       reader
     end
-    
+
     # Creates the hash of part-of-speech symbols to full definitions from the dictionary
     def build_pos_hash
-      @pos_hash ||= begin
-        pos_hash = {}
-        reader = open_reader(@dictionary_path)
-        done = false
-        while done == false
-            reader.read
-            case reader.node_type
-            when XML::Reader::TYPE_DOCUMENT_TYPE
-                # random segfault when attempting this
-                # cs.each do |child|
-                #   p child.to_s
-                # end
-                doctype_string = reader.node.to_s
-                entities = doctype_string.scan(ENTITY_REGEX)
-                entities.map do |entity|
-                  abbrev = entity[0]
-                  full = entity[1]
-                  sym = pos_to_sym(abbrev)
-                  pos_hash[sym] = full
-                end
-                done = true
-            when XML::Reader::TYPE_ELEMENT
-                done = true
-            end
+      pos_hash = {}
+      reader = open_reader(@dictionary_path)
+      done = false
+      until done
+        reader.read
+        case reader.node_type
+        when XML::Reader::TYPE_DOCUMENT_TYPE
+          # segfaults when attempting this:
+          # cs.each do |child|
+          #   p child.to_s
+          # end
+          doctype_string = reader.node.to_s
+          entities = doctype_string.scan(ENTITY_REGEX)
+          entities.map do |entity|
+            abbrev = entity[0]
+            full = entity[1]
+            sym = pos_to_sym(abbrev)
+            pos_hash[sym] = full
+          end
+          done = true
+        when XML::Reader::TYPE_ELEMENT
+          done = true
         end
-        pos_hash
       end
+      pos_hash
     end
 
     # Converts a part-of-speech entity reference string into a symbol
@@ -327,21 +287,21 @@ module JDict
 
   # Add custom parsing methods to XML::Reader
   class XML::Reader
-    
-    public
-    # Get the next text node
-    def next_text
-      # read until a text node
-      while (self.node_type != XML::Reader::TYPE_TEXT and self.read); end
-      self.value
-    end
-    # Get the next entity node
-    def next_entity
-      # read until an entity node
-      while (self.node_type != XML::Reader::TYPE_ENTITY and
-        self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
-        self.read); end
-      self.value
-    end
+
+  public
+  # Get the next text node
+  def next_text
+    # read until a text node
+    while (self.node_type != XML::Reader::TYPE_TEXT and self.read); end
+    self.value
+  end
+  # Get the next entity node
+  def next_entity
+    # read until an entity node
+    while (self.node_type != XML::Reader::TYPE_ENTITY and
+      self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
+      self.read); end
+    self.value
+  end
   end
 end
