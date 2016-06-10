@@ -4,13 +4,28 @@ require 'rsync'
 
 module JDict
   class Downloader
-    def retrieve_file(url)
+    def download
+
+    end
+
+    def sync
+
+    end
+
+    private
+
+    def retrieve_file(url, dest_dir)
       filename = File.basename(url)
-      File.write(filename, open(url).read)
+      full_path = File.join(dest_dir, filename)
+      File.write(full_path, open(url).read)
+      full_path
     end
 
     def gunzip(filename)
-      to_write = File.basename(filename, ".gz")
+      to_write = File.join(File.dirname(filename), File.basename(filename, ".gz"))
+
+      puts filename
+      puts to_write
 
       File.open(to_write, 'w') do |wri|
         File.open(filename) do |f|

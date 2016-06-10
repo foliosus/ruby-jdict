@@ -2,6 +2,7 @@
 require 'amalgalite'
 require 'libxml'
 require 'fileutils'
+require 'io/console'
 
 require_relative 'constants' #XML constants from the dictionary file
 
@@ -24,21 +25,14 @@ module JDict
     attr_reader :path
 
     # Initialize a full-text search index backend for JMdict
-    # @param index_path [String] desired filesystem path where you'd like the *search index* stored
-    # @param dictionary_path [String] desired filesystem path where you'd like the *dictionary* stored
-    def initialize
-      dictionary_path = JDict.config.dictionary_path
-
-      unless File.exists? dictionary_path
-        raise "Dictionary not found at path #{dictionary_path}. Please run the 'jdict-dl' command to download and index the dictionary."
-      end
-
-      @index_path = index_path
-      @dictionary_path = dictionary_path
+    # @param path [String] path to the dictionary
+    def initialize(path)
+      @dictionary_path = path
+      @index_path = File.dirname(@dictionary_path)
       @pos_hash = {}
 
-      # create path if nonexistent
-      FileUtils.mkdir_p(@index_path)
+      raise "No dictionary found at path #{@dictionary_path}" unless File.exists? @dictionary_path
+
       db_file = File.join(@index_path, "fts5.db")
 
       File.unlink(db_file) if JDict.config.debug && File.exist?(db_file)
@@ -47,7 +41,7 @@ module JDict
 
       create_schema
 
-      build_index
+      build_index unless built?
 
       #make the hash from abbreviated parts of speech to full definitions
       @pos_hash ||= build_pos_hash
@@ -67,6 +61,10 @@ module JDict
         SQL
         @index.reload_schema!
       end
+    end
+
+    def built?
+      @index.first_value_from( "SELECT count(*) from search" ) != 0
     end
 
     def make_query(term, exact)
@@ -97,8 +95,10 @@ module JDict
 
       @index.execute("SELECT sequence_number, kanji, kana, senses, bm25(search) as score FROM search WHERE search MATCH ? LIMIT ?", query, JDict.config.num_results) do |row|
         entry = Entry.from_sql(row)
+        score = 0.0
 
         is_exact_match = entry.kanji == term || entry.kana.any? { |k| k == term }
+        score = 1.0 if is_exact_match
 
         should_add = !exact || (exact && is_exact_match)
 
@@ -288,20 +288,20 @@ module JDict
   # Add custom parsing methods to XML::Reader
   class XML::Reader
 
-  public
-  # Get the next text node
-  def next_text
-    # read until a text node
-    while (self.node_type != XML::Reader::TYPE_TEXT and self.read); end
-    self.value
-  end
-  # Get the next entity node
-  def next_entity
-    # read until an entity node
-    while (self.node_type != XML::Reader::TYPE_ENTITY and
-      self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
-      self.read); end
-    self.value
-  end
+    public
+    # Get the next text node
+    def next_text
+      # read until a text node
+      while (self.node_type != XML::Reader::TYPE_TEXT and self.read); end
+      self.value
+    end
+    # Get the next entity node
+    def next_entity
+      # read until an entity node
+      while (self.node_type != XML::Reader::TYPE_ENTITY and
+        self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
+        self.read); end
+      self.value
+    end
   end
 end
