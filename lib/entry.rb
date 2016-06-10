@@ -95,7 +95,7 @@ module JDict
       list = @senses.map.with_index(1) do |sense, i|
         "#{i}. #{sense.to_s}"
       end
-      list.join("\n")
+      list.join(delimiter)
     end
   end
 end
