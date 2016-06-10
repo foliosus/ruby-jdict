@@ -24,9 +24,6 @@ module JDict
     def gunzip(filename)
       to_write = File.join(File.dirname(filename), File.basename(filename, ".gz"))
 
-      puts filename
-      puts to_write
-
       File.open(to_write, 'w') do |wri|
         File.open(filename) do |f|
           gz = Zlib::GzipReader.new(f)
@@ -34,6 +31,8 @@ module JDict
           gz.close
         end
       end
+
+      File.unlink(filename)
     end
 
     def rsync(src, dest)

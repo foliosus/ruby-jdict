@@ -11,8 +11,6 @@ require_relative 'kanji'     #...
 require_relative 'kana'      #...
 require_relative 'sense'
 
-require 'amalgalite'
-
 include LibXML
 
 module JDict
