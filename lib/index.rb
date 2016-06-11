@@ -95,7 +95,7 @@ module JDict
         entry = Entry.from_sql(row)
         score = 0.0
 
-        is_exact_match = entry.kanji == term || entry.kana.any? { |k| k == term }
+        is_exact_match = entry.kanji.include?(term) || entry.kana.include?(term)
         score = 1.0 if is_exact_match
 
         should_add = !exact || (exact && is_exact_match)
@@ -105,7 +105,7 @@ module JDict
       end
 
       # Sort the results by first column (score) and return only the second column (entry)
-      results.sort { |entry_a, entry_b| entry_a[0] <=> entry_a[0] }.map { |entry| entry[1] }
+      results.sort_by { |entry| -entry[0] }.map { |entry| entry[1] }
     end
 
     # Builds the full-text search index
@@ -220,86 +220,86 @@ module JDict
     end
 
     def rebuild_index
-      raise "Index already exists at path #{@index_path}" if File.exists? @index_path
-      build_index
-    end
+    raise "Index already exists at path #{@index_path}" if File.exists? @index_path
+    build_index
+  end
 
-    # Creates an XML::Reader object for the given path
-    # @param dictionary_path [String] path to the dictionary file
-    # @return [XML::Reader] the reader for the given dictionary
-    def open_reader(dictionary_path)
-      # open reader
-      reader = nil
-      Dir.chdir(Dir.pwd) do
-        jmdict_path = File.join(dictionary_path)
-        reader = XML::Reader.file(jmdict_path, :encoding => XML::Encoding::UTF_8) # create a reader for JMdict
-        raise "Failed to create XML::Reader for #{dictionary_path}!" if reader.nil?
-      end
-      reader
+  # Creates an XML::Reader object for the given path
+  # @param dictionary_path [String] path to the dictionary file
+  # @return [XML::Reader] the reader for the given dictionary
+  def open_reader(dictionary_path)
+    # open reader
+    reader = nil
+    Dir.chdir(Dir.pwd) do
+      jmdict_path = File.join(dictionary_path)
+      reader = XML::Reader.file(jmdict_path, :encoding => XML::Encoding::UTF_8) # create a reader for JMdict
+      raise "Failed to create XML::Reader for #{dictionary_path}!" if reader.nil?
     end
+    reader
+  end
 
-    # Creates the hash of part-of-speech symbols to full definitions from the dictionary
-    def build_pos_hash
-      pos_hash = {}
-      reader = open_reader(@dictionary_path)
-      done = false
-      until done
-        reader.read
-        case reader.node_type
-        when XML::Reader::TYPE_DOCUMENT_TYPE
-          # segfaults when attempting this:
-          # cs.each do |child|
-          #   p child.to_s
-          # end
-          doctype_string = reader.node.to_s
-          entities = doctype_string.scan(ENTITY_REGEX)
-          entities.map do |entity|
-            abbrev = entity[0]
-            full = entity[1]
-            sym = pos_to_sym(abbrev)
-            pos_hash[sym] = full
-          end
-          done = true
-        when XML::Reader::TYPE_ELEMENT
-          done = true
+  # Creates the hash of part-of-speech symbols to full definitions from the dictionary
+  def build_pos_hash
+    pos_hash = {}
+    reader = open_reader(@dictionary_path)
+    done = false
+    until done
+      reader.read
+      case reader.node_type
+      when XML::Reader::TYPE_DOCUMENT_TYPE
+        # segfaults when attempting this:
+        # cs.each do |child|
+        #   p child.to_s
+        # end
+        doctype_string = reader.node.to_s
+        entities = doctype_string.scan(ENTITY_REGEX)
+        entities.map do |entity|
+          abbrev = entity[0]
+          full = entity[1]
+          sym = pos_to_sym(abbrev)
+          pos_hash[sym] = full
         end
+        done = true
+      when XML::Reader::TYPE_ELEMENT
+        done = true
       end
-      pos_hash
     end
-
-    # Converts a part-of-speech entity reference string into a symbol
-    # @param entity [String] the entity reference string
-    # @return [Symbol] the part-of-speech symbol
-    def pos_to_sym(entity)
-      entity.gsub('-', '_').to_sym
-    end
-
-    # Retrieves the definition of a part-of-speech from its abbreviation
-    # @param pos [String] the abbreviation for the part-of-speech
-    # @return [String] the full description of the part-of-speech
-    def get_pos(pos)
-      build_pos_hash if @pos_hash.empty?
-      @pos_hash[pos_to_sym(pos)]
-    end
+    pos_hash
   end
 
-  # Add custom parsing methods to XML::Reader
-  class XML::Reader
-
-    public
-    # Get the next text node
-    def next_text
-      # read until a text node
-      while (self.node_type != XML::Reader::TYPE_TEXT and self.read); end
-      self.value
-    end
-    # Get the next entity node
-    def next_entity
-      # read until an entity node
-      while (self.node_type != XML::Reader::TYPE_ENTITY and
-        self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
-        self.read); end
-      self.value
-    end
+  # Converts a part-of-speech entity reference string into a symbol
+  # @param entity [String] the entity reference string
+  # @return [Symbol] the part-of-speech symbol
+  def pos_to_sym(entity)
+    entity.gsub('-', '_').to_sym
   end
+
+  # Retrieves the definition of a part-of-speech from its abbreviation
+  # @param pos [String] the abbreviation for the part-of-speech
+  # @return [String] the full description of the part-of-speech
+  def get_pos(pos)
+    build_pos_hash if @pos_hash.empty?
+    @pos_hash[pos_to_sym(pos)]
+  end
+end
+
+# Add custom parsing methods to XML::Reader
+class XML::Reader
+
+  public
+  # Get the next text node
+  def next_text
+    # read until a text node
+    while (self.node_type != XML::Reader::TYPE_TEXT and self.read); end
+    self.value
+  end
+  # Get the next entity node
+  def next_entity
+    # read until an entity node
+    while (self.node_type != XML::Reader::TYPE_ENTITY and
+      self.node_type != XML::Reader::TYPE_ENTITY_REFERENCE and
+      self.read); end
+    self.value
+  end
+end
 end
