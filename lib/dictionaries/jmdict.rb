@@ -9,7 +9,7 @@ module JDict
     end
 
     def dict_file
-      'JMDict'
+      'JMdict'
     end
 
     private
