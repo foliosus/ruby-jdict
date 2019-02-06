@@ -8,3 +8,4 @@ doc/*
 manifest
 sunspot-solr.pid
 *.gem
+Gemfile.lock
