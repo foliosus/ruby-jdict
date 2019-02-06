@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
-require 'jdict'
+require 'ruby-jdict'
 
-BASE_PATH   = ENV["HOME"]
-DICT_PATH   = File.join(BASE_PATH, '.dicts')
+DICT_PATH = File.join(ENV["HOME"], '.dicts')
 
-JDict.configure do |config|
-  config.dictionary_path    = DICT_PATH                                  # directory containing dictionary files
-  config.language           = JDict::JMDictConstants::Languages::ENGLISH # language for search results
-  config.num_results        = 50                                         # maximum results to return from searching
-end
-
-dict = JDict::JMDict.new
+dict = JDict::Dictionary.new(DICT_PATH)
+dict.build_index!
 
 query = ARGV.pop.dup unless ARGV.empty?
 query ||= "日本語"
+
+puts "Searching for \"#{query}\"."
+puts
 
 results = dict.search(query)
 results.each do |entry|

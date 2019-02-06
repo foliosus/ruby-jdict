@@ -1,19 +1,18 @@
 # Constants and descriptions for important elements/attributes
-# of the JMdict XML dictionary.                               
+# of the JMdict XML dictionary.
 # Descriptions come from JMdict.dtd (document type definition)
 module JDict
   module JMDictConstants
-    
     # TODO: change these strings to symbols ?
     # XML elements of the JMDict file
     module Elements
-      # Entries consist of kanji elements, kana elements, 
-      # general information and sense elements. Each entry must have at 
+      # Entries consist of kanji elements, kana elements,
+      # general information and sense elements. Each entry must have at
       # least one kana element and one sense element. Others are optional.
       ENTRY          = 'entry'
       SEQUENCE       = 'ent_seq'
 
-      # This element will contain a word or short phrase in Japanese 
+      # This element will contain a word or short phrase in Japanese
       # which is written using at least one kanji. The valid characters are
       # kanji, kana, related characters such as chouon and kurikaeshi, and
       # in exceptional cases, letters from other alphabets.
@@ -31,20 +30,20 @@ module JDict
       # sense elements will be employed.
       SENSE          = 'sense'
 
-      # Part-of-speech information about the entry/sense. Should use 
+      # Part-of-speech information about the entry/sense. Should use
       # appropriate entity codes.
       PART_OF_SPEECH = 'pos'
 
-      # Within each sense will be one or more "glosses", i.e. 
-      # target-language words or phrases which are equivalents to the 
-      # Japanese word. This element would normally be present, however it 
+      # Within each sense will be one or more "glosses", i.e.
+      # target-language words or phrases which are equivalents to the
+      # Japanese word. This element would normally be present, however it
       # may be omitted in entries which are purely for a cross-reference.
       GLOSS          = 'gloss'
 
       CROSSREFERENCE = 'xref'
     end
-    
-    # Constants for selecting the search language.   
+
+    # Constants for selecting the search language.
     # Used in the "gloss" element's xml:lang attribute.
     #   :eng never appears as a xml:lang constant because gloss is assumed to be English when not specified
     #   :jpn never appears as a xml:lang because the dictionary itself pivots around Japanese
@@ -60,5 +59,15 @@ module JDict
       SWEDISH   = :swe
       HUNGARIAN = :hun
     end
+
+    LANGUAGE_DEFAULT = Languages::ENGLISH
+  end
+
+  # Used when serializing entries to SQL.
+  module SerialConstants
+    LANGUAGE_SENTINEL = '&&'
+    MEANING_SENTINEL = '**'
+    PART_OF_SPEECH_SENTINEL = '$$'
+    SENSE_SENTINEL = '%%'
   end
 end

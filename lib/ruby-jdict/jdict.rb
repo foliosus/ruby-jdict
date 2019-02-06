@@ -1,0 +1,2 @@
+module JDict
+end

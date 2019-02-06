@@ -28,3 +28,14 @@ namespace :index do
     # end
   end
 end
+
+task :examples do
+  require_relative "lib/ruby-jdict.rb"
+  Dir['examples/*'].each do |example_file|
+    next if File.directory?(example_file)
+    puts "Running #{example_file}..."
+    puts
+
+    require_relative example_file
+  end
+end

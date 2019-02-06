@@ -12,9 +12,11 @@ Gem::Specification.new do |s|
   s.platform     = Gem::Platform::RUBY
   s.files        = Dir.glob("{examples,lib,spec}/**/*") + %w[LICENSING README.md Rakefile]
 
-  s.add_dependency              'libxml-ruby', '~>2.8.0'
-  s.add_dependency              'amalgalite', '~>1.5.0'
+  # s.add_dependency              'libxml-ruby', '~>2.8.0'
+  s.add_dependency              'rake', '~>12.3.2'
+  s.add_dependency              'nokogiri', '~>1.10.0'
+  s.add_dependency              'amalgalite', '~>1.6.0'
   s.add_dependency              'rsync', '~>1.0.9'
   s.add_development_dependency  'autotest'
-  s.add_development_dependency  'rspec', '~> 3.4.0'
+  s.add_development_dependency  'rspec', '~> 3.8.0'
 end

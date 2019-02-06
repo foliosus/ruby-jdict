@@ -1,5 +1,5 @@
 require 'spec_helper'
-require BASE_PATH + '/lib/dictionary'
+require BASE_PATH + '/lib/ruby-jdict'
 #require BASE_PATH + '/lib/jmdict'
 
 module DictionarySpecHelper
