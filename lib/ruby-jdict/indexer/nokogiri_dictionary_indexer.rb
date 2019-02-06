@@ -4,19 +4,19 @@ module JDict
   class NokogiriDictionaryIndexer < JDict::DictionaryIndexer
     def initialize(path)
       super
-
-      @doc = File.open(path) do |f|
-        Nokogiri::XML(f) { |c| c.strict }
-      end
     end
 
     def index(db_transaction, &block)
-      raw = @doc/"./JMdict/entry"
+      doc = File.open(path) do |f|
+        Nokogiri::XML(f) { |c| c.strict }
+      end
+
+      raw = doc/"./JMdict/entry"
       total = raw.count
       entries_added = 0
 
       raw.each do |entry|
-        yield entries_added, total if block_given?
+        yield entries_added, total if entries_added % 1000 == 0 and block_given?
 
         sequence_number = entry.at(JDict::JMDictConstants::Elements::SEQUENCE).content.to_i
         kanji = (entry/JDict::JMDictConstants::Elements::KANJI).map(&:content)
