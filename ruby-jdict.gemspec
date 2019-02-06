@@ -14,9 +14,9 @@ Gem::Specification.new do |s|
   s.license      = "MIT"
 
   # s.add_dependency              'libxml-ruby', '~>2.8.0'
-  s.add_dependency              'rake', '~>12.3'
   s.add_dependency              'nokogiri', '~>1.10'
   s.add_dependency              'amalgalite', '~>1.6'
   s.add_dependency              'rsync', '~>1.0'
   s.add_development_dependency  'rspec', '~> 3.8'
+  s.add_development_dependency  'rake', '~>12.3'
 end

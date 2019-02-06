@@ -20,8 +20,6 @@ module JDict
 
       @db_file = File.join(@index_path, "jdict.db")
       initialize_db(@db_file)
-
-      build_index!
     end
 
     def built?
