@@ -7,7 +7,7 @@ module JDict
     end
 
     def index(db_transaction, &block)
-      doc = File.open(path) do |f|
+      doc = File.open(@path) do |f|
         Nokogiri::XML(f) { |c| c.strict }
       end
 
